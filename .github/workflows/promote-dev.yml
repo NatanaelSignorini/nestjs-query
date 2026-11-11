@@ -1,16 +1,13 @@
 name: Promote dev to main
 
-# After light CI (dev) succeeds on a push to `dev`, open/update a PR to `main`
-# and enable auto-merge. Branch protection on `main` still requires the full
-# `check (main)` check from workflow `CI (main)`.
+# Manual only: run from Actions when `dev` is ready for production.
+# Opens/refreshes PR `dev` → `main` and enables auto-merge; `CI (main)` /
+# `check (main)` must pass before GitHub merges into `main`.
 #
 # Use secrets.PROMOTE_TOKEN (classic PAT or fine-grained with contents+PR on this repo)
 # so the PR is authored by a human user and CI/Code scanning run without "Approve and run".
-# GITHUB_TOKEN PRs from github-actions[bot] stay stuck in action_required until approved.
 on:
-  workflow_run:
-    workflows: ['CI (dev)']
-    types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,10 +15,6 @@ permissions:
 
 jobs:
   promote:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'dev'
     runs-on: ubuntu-latest
     steps:
       - name: Create or refresh promote PR
@@ -41,16 +34,12 @@ jobs:
               --base main \
               --head dev \
               --title "chore: promote dev to main" \
-              --body "Automated promote from \`dev\` after light CI (\`CI (dev)\` / \`check (dev)\`) passed.
+              --body "Manual promote from \`dev\` (Actions → **Promote dev to main** → Run workflow).
 
-          Full CI (\`CI (main)\` / \`check (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
-
-          Note: \`CI (main)\` and \`CI (dev)\` are separate workflows so push-to-dev never posts a skipped check named \`check (main)\` on the same SHA."
+          Full CI (\`CI (main)\` / \`check (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR; auto-merge into \`main\` runs when checks are green."
             existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
           fi
 
           echo "Promote PR #$existing"
-          # Keep the branch up to date when main moved (strict required checks).
-          gh pr merge "$existing" --auto --merge || true
-          # Update branch if GitHub reports behind (best-effort; needs admin or allow update).
           gh api -X PUT "repos/${GH_REPO}/pulls/${existing}/update-branch" || true
+          gh pr merge "$existing" --auto --merge
