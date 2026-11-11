@@ -13,8 +13,8 @@ import {
 import { PubSub } from 'graphql-subscriptions'
 
 import { InjectPubSub } from '../decorators'
-import { createGroupByDateFieldsResolver } from '../resolvers/aggregate/group-by-aggregate.resolver'
 import { CRUDResolver, CRUDResolverOpts, FederationResolver } from '../resolvers'
+import { createGroupByDateFieldsResolver } from '../resolvers/aggregate/group-by-aggregate.resolver'
 import { PagingStrategies } from '../types/query/paging'
 
 export type CRUDAutoResolverOpts<DTO, C, U, R, PS extends PagingStrategies> = CRUDResolverOpts<DTO, C, U, R, PS> & {

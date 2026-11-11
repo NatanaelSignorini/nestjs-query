@@ -1,5 +1,5 @@
 import { MongoMemoryServer } from 'mongodb-memory-server'
-import { connections } from 'mongoose'
+import { Connection, connections, ConnectionStates } from 'mongoose'
 
 import { seed } from './seeds'
 
@@ -16,17 +16,38 @@ export class MongoServer {
     }
   }
 
+  private getActiveConnection(): Connection | undefined {
+    for (let i = connections.length - 1; i >= 0; i -= 1) {
+      const connection = connections[i]
+      if (connection?.readyState === ConnectionStates.connected && connection.db) {
+        return connection
+      }
+    }
+    return undefined
+  }
+
   async clearDatabase(): Promise<void> {
-    const collections = await connections[connections.length - 1].db.collections()
+    const connection = this.getActiveConnection()
+    if (!connection?.db) {
+      return
+    }
+    const collections = await connection.db.collections()
     await Promise.all(collections.map((collection) => collection.deleteMany({})))
   }
 
   async prepareDb(): Promise<void> {
-    await seed(connections[connections.length - 1])
+    const connection = this.getActiveConnection()
+    if (!connection) {
+      throw new Error('MongoServer: no active mongoose connection to seed')
+    }
+    await seed(connection)
   }
 
   async closeDbConnection(): Promise<void> {
-    await connections[connections.length - 1].close()
+    const connection = this.getActiveConnection()
+    if (connection) {
+      await connection.close()
+    }
 
     if (this.mongod) {
       await this.mongod.stop()

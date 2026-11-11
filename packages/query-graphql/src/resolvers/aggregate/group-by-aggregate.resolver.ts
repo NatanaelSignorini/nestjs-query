@@ -1,10 +1,9 @@
 import { Args, Parent, registerEnumType, Resolver } from '@nestjs/graphql'
-import { AggregateResponse, Class, GroupBy, QueryService } from '@ptc-org/nestjs-query-core'
+import { Class, GroupBy } from '@ptc-org/nestjs-query-core'
 
 import { getGraphqlObjectName } from '../../common'
 import { getFilterableFields, ResolverField } from '../../decorators'
 import { AggregateResponseType } from '../../types'
-import { ServiceResolver } from '../resolver.interface'
 
 registerEnumType(GroupBy, {
   name: 'GroupBy',
@@ -39,13 +38,13 @@ export function createGroupByDateFieldsResolver<DTO>(
         @ResolverField(field.schemaName, () => field.returnTypeFunc?.() ?? field.target, { nullable: true })
         [field.schemaName](
           @Parent() parent: DTO,
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           @Args('by', {
             type: () => GroupBy,
             defaultValue: GroupBy.DAY
           })
           by: GroupBy
         ): unknown {
+          void by
           return (parent as Record<string, unknown>)[field.propertyName]
         }
       }
@@ -62,12 +61,3 @@ export function createGroupByDateFieldsResolver<DTO>(
 
   return ResolverClass
 }
-
-/**
- * @deprecated No-op kept for call-site compatibility. Date group-by field resolvers
- * are registered via {@link createGroupByDateFieldsResolver} as a separate provider.
- */
-export const GroupByAggregateMixin =
-  <DTO>(_DTOClass: Class<DTO>, _AR: Class<AggregateResponse<DTO>>) =>
-  <B extends Class<ServiceResolver<DTO, QueryService<DTO, unknown, unknown>>>>(Base: B): B =>
-    Base

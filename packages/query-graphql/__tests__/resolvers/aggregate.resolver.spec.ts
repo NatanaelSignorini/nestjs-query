@@ -41,7 +41,10 @@ describe('AggregateResolver', () => {
 
     const groupByResolver = createGroupByDateFieldsResolver(DateAggDTO, { enabled: true })
     expect(groupByResolver).toBeDefined()
-    const schema = await generateSchema([DateAggResolver, groupByResolver!])
+    if (!groupByResolver) {
+      throw new Error('expected AggregateGroupBy date resolver')
+    }
+    const schema = await generateSchema([DateAggResolver, groupByResolver])
     expect(schema).toContain('fakeDate(by: GroupBy! = DAY)')
   })
 
