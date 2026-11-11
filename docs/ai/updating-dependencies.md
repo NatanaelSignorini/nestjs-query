@@ -40,8 +40,8 @@ Dependabot may open grouped PRs under `dependabot/npm_and_yarn/development-depen
    NODE_OPTIONS=--experimental-vm-modules yarn nx run-many --target=test --all
    ```
 
-6. PR → `dev`; wait for **`ci-dev`**.
-7. After merge, watch promote PR for full **`ci`** (e2e/federation often break on GraphQL/Apollo/Babel peer drift).
+6. PR → `dev`; wait for **`check (dev)`**.
+7. After merge, watch promote PR for full **`check (main)`** (e2e/federation often break on GraphQL/Apollo/Babel peer drift).
 
 ## Federation / Babel
 

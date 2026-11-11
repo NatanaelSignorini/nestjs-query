@@ -1,4 +1,4 @@
-name: CI
+name: CI (main)
 
 # Full gate for production (`main` / `master` / `releases/*`) only.
 # Keep this workflow off `dev` so push-to-dev never posts a skipped check named `ci`.
@@ -148,8 +148,8 @@ jobs:
           docker compose logs
 
   # Single required status check for `main` branch protection.
-  ci:
-    name: ci
+  check-main-gate:
+    name: check (main)
     needs: [check, e2e-test, federation-e2e-test]
     if: always()
     runs-on: ubuntu-latest

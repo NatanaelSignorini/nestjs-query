@@ -1,4 +1,4 @@
-name: CI Dev
+name: CI (dev)
 
 # Light gate for `dev` only. Must NOT emit a check named `ci` (skipped or otherwise),
 # or promote PRs to `main` can auto-merge on a skipped required check from the same SHA.
@@ -72,8 +72,8 @@ jobs:
           NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
 
   # Required status check name for `dev` branch protection.
-  ci-dev:
-    name: ci-dev
+  check-dev-gate:
+    name: check (dev)
     needs: [check-dev]
     if: always()
     runs-on: ubuntu-latest
