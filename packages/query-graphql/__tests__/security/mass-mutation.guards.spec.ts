@@ -60,13 +60,13 @@ describe('mass mutation security guards', () => {
 
   describe('assertMaxAffectedFromCount', () => {
     it('skips count when maxAffected is unset', async () => {
-      const count = jest.fn(async () => 10_000)
+      const count = jest.fn(() => Promise.resolve(10_000))
       await expect(assertMaxAffectedFromCount(count)).resolves.toBeUndefined()
       expect(count).not.toHaveBeenCalled()
     })
 
     it('counts and rejects when over maxAffected', async () => {
-      const count = jest.fn(async () => 11)
+      const count = jest.fn(() => Promise.resolve(11))
       await expect(assertMaxAffectedFromCount(count, { massMutations: { maxAffected: 10 } })).rejects.toBeInstanceOf(
         BadRequestException
       )
@@ -74,7 +74,7 @@ describe('mass mutation security guards', () => {
     })
 
     it('counts and allows values within maxAffected', async () => {
-      const count = jest.fn(async () => 10)
+      const count = jest.fn(() => Promise.resolve(10))
       await expect(assertMaxAffectedFromCount(count, { massMutations: { maxAffected: 10 } })).resolves.toBeUndefined()
       expect(count).toHaveBeenCalledTimes(1)
     })
