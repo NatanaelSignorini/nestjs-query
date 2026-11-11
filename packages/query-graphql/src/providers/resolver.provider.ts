@@ -13,6 +13,7 @@ import {
 import { PubSub } from 'graphql-subscriptions'
 
 import { InjectPubSub } from '../decorators'
+import { createGroupByDateFieldsResolver } from '../resolvers/aggregate/group-by-aggregate.resolver'
 import { CRUDResolver, CRUDResolverOpts, FederationResolver } from '../resolvers'
 import { PagingStrategies } from '../types/query/paging'
 
@@ -212,4 +213,17 @@ function createResolver<
 
 export const createResolvers = (
   opts: AutoResolverOpts<unknown, unknown, unknown, unknown, unknown, PagingStrategies>[]
-): Provider[] => opts.map((opt) => createResolver(opt))
+): Provider[] =>
+  opts.flatMap((opt) => {
+    const resolver = createResolver(opt)
+    if (isFederatedResolverOpts(opt)) {
+      return [resolver]
+    }
+
+    const aggregateOpts = {
+      enabled: opt.enableAggregate ?? opt.aggregate?.enabled,
+      AggregateDTOClass: opt.AggregateDTOClass ?? opt.aggregate?.AggregateDTOClass
+    }
+    const groupByResolver = createGroupByDateFieldsResolver(opt.DTOClass, aggregateOpts)
+    return groupByResolver ? [resolver, groupByResolver] : [resolver]
+  })

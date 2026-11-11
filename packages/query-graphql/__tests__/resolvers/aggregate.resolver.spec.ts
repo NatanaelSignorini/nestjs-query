@@ -1,9 +1,10 @@
-import { Query, Resolver } from '@nestjs/graphql'
+import { GraphQLISODateTime, ObjectType, Query, Resolver } from '@nestjs/graphql'
 import { AggregateQuery, AggregateResponse } from '@ptc-org/nestjs-query-core'
-import { AggregateArgsType } from '@ptc-org/nestjs-query-graphql'
+import { AggregateArgsType, FilterableField } from '@ptc-org/nestjs-query-graphql'
 import { deepEqual, objectContaining, when } from 'ts-mockito'
 
 import { AggregateResolver, AggregateResolverOpts } from '../../src/resolvers/aggregate.resolver'
+import { createGroupByDateFieldsResolver } from '../../src/resolvers/aggregate/group-by-aggregate.resolver'
 import { createResolverFromNest, generateSchema, TestResolverDTO, TestService } from '../__fixtures__'
 
 describe('AggregateResolver', () => {
@@ -22,6 +23,27 @@ describe('AggregateResolver', () => {
   it('should not expose read methods if not enabled', () => expectResolverSDL())
 
   it('should create a AggregateResolver for the DTO', () => expectResolverSDL({ enabled: true }))
+
+  it('should expose groupBy date args on a dedicated AggregateGroupBy resolver', async () => {
+    @ObjectType()
+    class DateAggDTO {
+      @FilterableField(() => GraphQLISODateTime)
+      fakeDate!: Date
+    }
+
+    @Resolver(() => DateAggDTO)
+    class DateAggResolver extends AggregateResolver(DateAggDTO, { enabled: true }) {
+      @Query(() => DateAggDTO)
+      test(): DateAggDTO {
+        return { fakeDate: new Date() }
+      }
+    }
+
+    const groupByResolver = createGroupByDateFieldsResolver(DateAggDTO, { enabled: true })
+    expect(groupByResolver).toBeDefined()
+    const schema = await generateSchema([DateAggResolver, groupByResolver!])
+    expect(schema).toContain('fakeDate(by: GroupBy! = DAY)')
+  })
 
   describe('#aggregate', () => {
     const createResolver = () => {
