@@ -10,7 +10,7 @@ WORKDIR /app
 COPY examples/federation-v2-e2e/gateway/package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY examples/federation-v2-e2e/gateway/src ./src

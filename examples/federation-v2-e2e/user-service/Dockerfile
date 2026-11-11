@@ -53,10 +53,10 @@ COPY --from=builder /build/dist/*.tgz ./packages/
 COPY examples/federation-v2-e2e/user-service/package*.json ./
 
 # Install dependencies using local packages
-RUN npm install ./packages/ptc-org-nestjs-query-core-*.tgz \
+RUN npm install --legacy-peer-deps ./packages/ptc-org-nestjs-query-core-*.tgz \
     ./packages/ptc-org-nestjs-query-graphql-*.tgz \
     ./packages/ptc-org-nestjs-query-typeorm-*.tgz \
-    && npm install
+    && npm install --legacy-peer-deps
 
 # Copy source code
 COPY examples/federation-v2-e2e/user-service/src ./src
