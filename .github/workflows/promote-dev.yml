@@ -1,10 +1,11 @@
 name: Promote dev to main
 
-# After the light CI succeeds on a push to `dev`, open/update a PR to `main`
-# and enable auto-merge. Branch protection on `main` still requires the full `ci` check.
+# After light CI Dev succeeds on a push to `dev`, open/update a PR to `main`
+# and enable auto-merge. Branch protection on `main` still requires the full `ci` check
+# from workflow `CI` (which only runs for main/master PRs and pushes).
 on:
   workflow_run:
-    workflows: [CI]
+    workflows: [CI Dev]
     types: [completed]
 
 permissions:
@@ -32,9 +33,11 @@ jobs:
               --base main \
               --head dev \
               --title "chore: promote dev to main" \
-              --body "Automated promote from \`dev\` after light CI (\`ci-dev\`) passed.
+              --body "Automated promote from \`dev\` after light CI (\`CI Dev\` / \`ci-dev\`) passed.
 
-          Full CI (\`ci\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`."
+          Full CI (\`CI\` / \`ci\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
+
+          Note: \`CI\` and \`CI Dev\` are separate workflows so push-to-dev never posts a skipped check named \`ci\` on the same SHA."
             existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
           fi
 

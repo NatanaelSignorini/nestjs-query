@@ -14,24 +14,27 @@
 
 ## Workflows
 
-Active definitions live under `.github/workflows/`:
+Active definitions live under `.github/workflows/`. **Light and full gates are separate workflow files** so a push to `dev` never posts a skipped check named `ci` on the same SHA (that footgun let promote PR #14 auto-merge without a real full gate).
 
-- **`ci.yml`** — name `CI`
-  - **Light path (`dev`):** jobs `setup` → `check-dev` (Node `24.x` × `build` / `test` / `lint`) → aggregator **`ci-dev`**.
-  - **Full path (`main` / `master` / `releases/*`):** `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`ci`**.
-- **`promote-dev.yml`** — on `workflow_run` of `CI` **completed** with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full `ci` on that PR still gates merge into `main`.
+- **`ci-dev.yml`** — name **`CI Dev`**
+  - Triggers: `push` / `pull_request` to **`dev` only**.
+  - Jobs: `setup` → `check-dev` (Node `24.x` × `build` / `test` / `lint`) → aggregator **`ci-dev`**.
+  - Concurrency: `ci-dev-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
+- **`ci.yml`** — name **`CI`**
+  - Triggers: `push` / `pull_request` to **`main` / `master` / `releases/*`**, plus `workflow_dispatch`.
+  - Jobs: `setup` → `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`ci`**.
+  - Concurrency: `ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
+- **`promote-dev.yml`** — on `workflow_run` of **`CI Dev`** completed with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full **`ci`** from workflow `CI` on that PR gates merge into `main`.
   - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`. Without that, promote fails with `GitHub Actions is not permitted to create or approve pull requests`.
 - **CodeQL** — runs on `main` / `master` / `dev`.
 - **Publish / release** — `workflow_dispatch` only (see [publishing.md](publishing.md)).
-- Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing `ci.yml`.
+- Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing these workflows.
 
-Concurrency for CI:
+`cancel-in-progress: true` on both CI workflows. Ghost queued runs from old workflow names can block progress; prefer bumping the concurrency group (or workflow display name) over endless cancel retries. See notes below.
 
-```text
-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-```
+### Why two workflows
 
-`cancel-in-progress: true`. Ghost queued runs from old workflow names can block progress; prefer bumping the concurrency group (or workflow display name) over endless cancel retries. See notes below.
+GitHub associates check runs with the **commit SHA**. When light and full gates lived in one workflow, push-to-`dev` posted **`ci` = skipped**. A promote PR (`dev` → `main`) reused that SHA; required check `ci` looked “present” as skipped and auto-merge could proceed without e2e/federation. Splitting files means `dev` only ever gets `ci-dev`, and `main` PRs only ever get `ci`.
 
 ## What each gate runs
 
