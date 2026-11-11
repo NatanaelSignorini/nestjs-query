@@ -165,19 +165,3 @@ jobs:
             echo "One or more required pipeline jobs failed or were skipped"
             exit 1
           fi
-
-  # Temporary alias while branch protection still lists `ci (main)`. Remove after protection PATCH.
-  ci-main-legacy:
-    name: ci (main)
-    needs: [check, e2e-test, federation-e2e-test]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify required jobs (legacy check name)
-        run: |
-          if [ "${{ needs.check.result }}" != "success" ] \
-            || [ "${{ needs.e2e-test.result }}" != "success" ] \
-            || [ "${{ needs.federation-e2e-test.result }}" != "success" ]; then
-            echo "One or more required pipeline jobs failed or were skipped"
-            exit 1
-          fi

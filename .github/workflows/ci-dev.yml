@@ -85,17 +85,3 @@ jobs:
             echo "Light pipeline failed or was skipped"
             exit 1
           fi
-
-  # Temporary alias while branch protection still lists `ci (dev)`. Remove after protection PATCH.
-  ci-dev-legacy:
-    name: ci (dev)
-    needs: [check-dev]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify light pipeline (legacy check name)
-        run: |
-          if [ "${{ needs.check-dev.result }}" != "success" ]; then
-            echo "Light pipeline failed or was skipped"
-            exit 1
-          fi
