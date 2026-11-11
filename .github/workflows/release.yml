@@ -1,12 +1,13 @@
 name: Release
 
+# Manual-only. This private fork should not publish npm packages unless explicitly intended.
 on:
   workflow_dispatch:
     inputs:
       environment:
         description: Environment
         required: true
-        default: prod
+        default: alpha
         type: choice
         options:
           - prod
@@ -22,6 +23,11 @@ on:
           - prepatch
           - prerelease
 
+      confirmPublish:
+        description: Type PUBLISH to allow npm publish from this private fork
+        required: true
+        type: string
+
 env:
   NX_BRANCH: ${{ github.event.number }}
   NX_RUN_GROUP: ${{ github.run_id }}
@@ -30,6 +36,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
+    if: ${{ inputs.confirmPublish == 'PUBLISH' }}
     steps:
       - uses: actions/checkout@v7
         with:

@@ -1,18 +1,11 @@
 name: Publish Preview
 
+# Manual-only while the fork is private — do not auto-publish previews from PRs/pushes.
 on:
-  pull_request:
-    branches:
-      - main
-      - master
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 concurrency:
-  group: publish-preview-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: publish-preview-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
