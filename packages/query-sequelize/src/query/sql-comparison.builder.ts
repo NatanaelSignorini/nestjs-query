@@ -5,12 +5,7 @@ import { Op, Rangable, WhereOptions } from 'sequelize'
  * @internal
  */
 export type EntityComparisonField<Entity, F extends keyof Entity> =
-  | Entity[F]
-  | Entity[F][]
-  | CommonFieldComparisonBetweenType<Entity[F]>
-  | true
-  | false
-  | null
+  Entity[F] | Entity[F][] | CommonFieldComparisonBetweenType<Entity[F]> | true | false | null
 
 /**
  * @internal
