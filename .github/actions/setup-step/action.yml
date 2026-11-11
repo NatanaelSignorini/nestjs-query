@@ -3,7 +3,7 @@ description: 'Setup Step'
 author: 'Tycho Bokdam'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Get Node version
       id: node-version
@@ -15,7 +15,8 @@ runs:
       uses: actions/cache@v6
       with:
         path: |
-          ~/.cache/mongodb-memory-server
+          ~/.cache/mongodb-binaries
+          **/node_modules/.cache
           **/node_modules
         key: cache-node-modules-${{ steps.node-version.outputs.version }}-${{ hashFiles('yarn.lock') }}
 
