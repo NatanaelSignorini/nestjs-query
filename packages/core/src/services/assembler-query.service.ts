@@ -58,8 +58,11 @@ export class AssemblerQueryService<
   }
 
   public async deleteMany(filter: Filter<DTO>): Promise<DeleteManyResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.queryService.deleteMany(this.assembler.convertQuery({ filter }).filter)
+    const convertedFilter = this.assembler.convertQuery({ filter }).filter
+    if (!convertedFilter) {
+      throw new Error('deleteMany requires a filter after assembler conversion')
+    }
+    return this.queryService.deleteMany(convertedFilter)
   }
 
   public async deleteOne(id: number | string, opts?: DeleteOneOptions<DTO>): Promise<DTO> {
@@ -276,11 +279,11 @@ export class AssemblerQueryService<
   }
 
   public async updateMany(update: U, filter: Filter<DTO>): Promise<UpdateManyResponse> {
-    return this.queryService.updateMany(
-      await this.assembler.convertToUpdateEntity(update),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.assembler.convertQuery({ filter }).filter
-    )
+    const convertedFilter = this.assembler.convertQuery({ filter }).filter
+    if (!convertedFilter) {
+      throw new Error('updateMany requires a filter after assembler conversion')
+    }
+    return this.queryService.updateMany(await this.assembler.convertToUpdateEntity(update), convertedFilter)
   }
 
   public async updateOne(id: string | number, update: U, opts?: UpdateOneOptions<DTO>): Promise<DTO> {

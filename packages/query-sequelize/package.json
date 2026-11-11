@@ -1,6 +1,6 @@
 {
   "name": "@ptc-org/nestjs-query-sequelize",
-  "version": "10.0.3",
+  "version": "11.0.0-alpha.0",
   "description": "Sequelize adapter for @ptc-org/nestjs-query-core",
   "homepage": "https://github.com/tripss/nestjs-query#readme",
   "bugs": {
@@ -28,10 +28,13 @@
     "tslib": "^2.8.1"
   },
   "peerDependencies": {
-    "@nestjs/common": "^10.0.0 || ^11.0.0",
-    "@nestjs/sequelize": "^10.0.0 || ^11.0.0",
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/sequelize": "^12.0.0",
     "sequelize": "^6.5.0",
     "sequelize-typescript": "^1.1.0 || ^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.19.0 || >=22.12.0"
   },
   "publishConfig": {
     "access": "public"

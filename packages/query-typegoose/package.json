@@ -1,6 +1,6 @@
 {
   "name": "@ptc-org/nestjs-query-typegoose",
-  "version": "10.0.3",
+  "version": "11.0.0-alpha.0",
   "description": "Typegoose adapter for @ptc-org/nestjs-query-core",
   "homepage": "https://github.com/tripss/nestjs-query#readme",
   "bugs": {
@@ -30,9 +30,12 @@
   },
   "peerDependencies": {
     "@m8a/nestjs-typegoose": "^13.0.0",
-    "@nestjs/common": "^10.0.0 || ^11.0.0",
+    "@nestjs/common": "^12.0.0",
     "@typegoose/typegoose": "^13.0.0",
     "mongoose": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20.19.0 || >=22.12.0"
   },
   "publishConfig": {
     "access": "public"

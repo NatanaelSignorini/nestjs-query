@@ -23,7 +23,7 @@ export type EntityComparisonField<Entity, F extends keyof Entity> =
  * @internal
  * Builder to create SQL Comparisons. (=, !=, \>, etc...)
  */
-export class SQLComparisonBuilder<Entity> {
+export class SQLComparisonBuilder<Entity extends ObjectLiteral> {
   static DEFAULT_COMPARISON_MAP: Record<string, string> = {
     eq: '=',
     neq: '!=',
@@ -56,7 +56,7 @@ export class SQLComparisonBuilder<Entity> {
    *
    * @param entityMetadata - metadata of the entity the builder builds comparisons for.
    */
-  public static forEntityMetadata<Entity>(entityMetadata: EntityMetadata): SQLComparisonBuilder<Entity> {
+  public static forEntityMetadata<Entity extends ObjectLiteral>(entityMetadata: EntityMetadata): SQLComparisonBuilder<Entity> {
     return new SQLComparisonBuilder<Entity>(SQLComparisonBuilder.DEFAULT_COMPARISON_MAP, undefined, entityMetadata)
   }
 

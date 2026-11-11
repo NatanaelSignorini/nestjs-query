@@ -28,8 +28,9 @@ describe('Federation N+1 Integration Test (Based on User Demo)', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
-          type: 'better-sqlite3',
-          database: ':memory:',
+          type: 'sqljs',
+          location: ':memory:',
+          autoSave: false,
           entities: [TodoList, TodoItem],
           synchronize: true,
           logging: true,

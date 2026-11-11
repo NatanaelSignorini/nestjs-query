@@ -1,0 +1,10 @@
+nestjs-query
+Copyright (c) 2020 Doug Martin
+Copyright (c) TriPSs / @ptc-org contributors
+Copyright (c) nest-query fork maintainers
+
+This product includes software developed from:
+- doug-martin/nestjs-query (https://github.com/doug-martin/nestjs-query) — MIT
+- TriPSs/nestjs-query / @ptc-org (https://github.com/TriPSs/nestjs-query) — MIT
+
+Licensed under the MIT License. See LICENSE for the full license text.

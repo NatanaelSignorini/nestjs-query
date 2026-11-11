@@ -36,7 +36,7 @@ type PrimaryKey = {
   propertyName: string
 }
 
-interface RelationQuery<Relation, Entity> {
+interface RelationQuery<Relation extends ObjectLiteral, Entity> {
   relation: RelationMetadata
   from: Class<Relation>
   fromAlias: string
@@ -66,7 +66,7 @@ export type EntityIndexRelation<Relation> = Relation & {
  *
  * Class that will convert a Query into a `typeorm` Query Builder.
  */
-export class RelationQueryBuilder<Entity, Relation> {
+export class RelationQueryBuilder<Entity extends ObjectLiteral, Relation extends ObjectLiteral> {
   readonly filterQueryBuilder: FilterQueryBuilder<Relation>
 
   readonly relationRepo: Repository<Relation>

@@ -11,6 +11,10 @@
 
 Nestjs-Query is a collection of packages for building queryable CRUD APIs with NestJS. It provides reusable query, filtering, sorting, paging, authorization, and persistence-service primitives for GraphQL and REST applications.
 
+> **Fork status:** this repository is a security- and NestJS-12-focused fork based on [TriPSs/nestjs-query](https://github.com/TriPSs/nestjs-query) (`@ptc-org`), itself derived from [doug-martin/nestjs-query](https://github.com/doug-martin/nestjs-query) (MIT). See `NOTICE` and `SECURITY.md`.
+>
+> **Targets:** Node.js 24 (engines ≥20.19 / ≥22.12), NestJS 12, TypeORM **1.x only**.
+
 ## Why?
 
 While working on projects in NestJS it was easy to get up and running with GraphQL, but many resolver patterns were repeated across applications—especially querying, sorting, and paging. Nestjs-Query packages those patterns so they can be configured and reused.

@@ -12,8 +12,9 @@ import { TestVirtualColumnEntity } from './test-virtual-column.entity'
 import { TestVirtualColumnRelation } from './test-virtual-column.relation'
 
 export const CONNECTION_OPTIONS: DataSourceOptions = {
-  type: 'better-sqlite3',
-  database: ':memory:',
+  type: 'sqljs',
+  location: ':memory:',
+  autoSave: false,
   dropSchema: true,
   entities: [
     TestEntity,

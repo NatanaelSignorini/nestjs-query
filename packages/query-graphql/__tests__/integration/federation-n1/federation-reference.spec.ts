@@ -35,8 +35,9 @@ describe('Federation Reference Resolution Integration Test', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
-          type: 'better-sqlite3',
-          database: ':memory:',
+          type: 'sqljs',
+          location: ':memory:',
+          autoSave: false,
           entities: [TodoList, TodoItem],
           synchronize: true
         }),

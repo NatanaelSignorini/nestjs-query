@@ -7,7 +7,7 @@ import {
   GroupBy
 } from '@ptc-org/nestjs-query-core'
 import { camelCase } from 'camel-case'
-import { Repository, SelectQueryBuilder } from 'typeorm'
+import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm'
 import { DriverUtils } from 'typeorm/driver/DriverUtils'
 
 enum AggregateFuncs {
@@ -24,7 +24,7 @@ const AGG_REGEXP = /(AVG|SUM|COUNT|MAX|MIN|GROUP_BY)_(.*)/
  * @internal
  * Builds a WHERE clause from a Filter.
  */
-export class AggregateBuilder<Entity> {
+export class AggregateBuilder<Entity extends ObjectLiteral> {
   private readonly isPostgres: boolean
 
   constructor(readonly repo: Repository<Entity>) {

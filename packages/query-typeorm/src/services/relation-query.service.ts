@@ -11,7 +11,7 @@ import {
   QueryRelationsOptions
 } from '@ptc-org/nestjs-query-core'
 import lodashOmit from 'lodash.omit'
-import { RelationQueryBuilder as TypeOrmRelationQueryBuilder, Repository } from 'typeorm'
+import { ObjectLiteral, RelationQueryBuilder as TypeOrmRelationQueryBuilder, Repository } from 'typeorm'
 import { RelationMetadata } from 'typeorm/metadata/RelationMetadata'
 
 import { AggregateBuilder, EntityIndexRelation, FilterQueryBuilder, RelationQueryBuilder } from '../query'
@@ -20,7 +20,7 @@ import { AggregateBuilder, EntityIndexRelation, FilterQueryBuilder, RelationQuer
  * Base class to house relations loading.
  * @internal
  */
-export abstract class RelationQueryService<Entity> {
+export abstract class RelationQueryService<Entity extends ObjectLiteral> {
   abstract filterQueryBuilder: FilterQueryBuilder<Entity>
 
   abstract EntityClass: Class<Entity>
