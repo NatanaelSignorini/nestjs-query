@@ -2,7 +2,7 @@ name: Promote dev to main
 
 # After light CI (dev) succeeds on a push to `dev`, open/update a PR to `main`
 # and enable auto-merge. Branch protection on `main` still requires the full
-# `ci (main)` check from workflow `CI (main)`.
+# `check (main)` check from workflow `CI (main)`.
 #
 # Use secrets.PROMOTE_TOKEN (classic PAT or fine-grained with contents+PR on this repo)
 # so the PR is authored by a human user and CI/Code scanning run without "Approve and run".
@@ -41,11 +41,11 @@ jobs:
               --base main \
               --head dev \
               --title "chore: promote dev to main" \
-              --body "Automated promote from \`dev\` after light CI (\`CI (dev)\` / \`ci (dev)\`) passed.
+              --body "Automated promote from \`dev\` after light CI (\`CI (dev)\` / \`check (dev)\`) passed.
 
-          Full CI (\`CI (main)\` / \`ci (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
+          Full CI (\`CI (main)\` / \`check (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
 
-          Note: \`CI (main)\` and \`CI (dev)\` are separate workflows so push-to-dev never posts a skipped check named \`ci (main)\` on the same SHA."
+          Note: \`CI (main)\` and \`CI (dev)\` are separate workflows so push-to-dev never posts a skipped check named \`check (main)\` on the same SHA."
             existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
           fi
 
