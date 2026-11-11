@@ -1,0 +1,53 @@
+# Default: normalize text to LF in the repo; checkout as LF everywhere
+* text=auto eol=lf
+
+# Explicit text
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.graphql text eol=lf
+*.gql text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.env text eol=lf
+*.txt text eol=lf
+*.xml text eol=lf
+*.svg text eol=lf
+*.editorconfig text eol=lf
+*.gitignore text eol=lf
+*.npmrc text eol=lf
+*.prettierrc text eol=lf
+*.eslintrc text eol=lf
+*.eslintrc.json text eol=lf
+Dockerfile text eol=lf
+Makefile text eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.node binary
+*.dll binary
+*.exe binary
+*.wasm binary
+yarn.lock text eol=lf
+package-lock.json text eol=lf

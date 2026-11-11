@@ -59,9 +59,7 @@ export interface NonePagingQueryArgsTypeOpts<DTO> extends BaseQueryArgsTypeOpts<
 }
 
 export type QueryArgsTypeOpts<DTO> =
-  | CursorQueryArgsTypeOpts<DTO>
-  | OffsetQueryArgsTypeOpts<DTO>
-  | NonePagingQueryArgsTypeOpts<DTO>
+  CursorQueryArgsTypeOpts<DTO> | OffsetQueryArgsTypeOpts<DTO> | NonePagingQueryArgsTypeOpts<DTO>
 
 export interface StaticQueryType<DTO, PS extends PagingStrategies> extends Class<QueryType<DTO, PS>> {
   SortType: Class<SortField<DTO>>

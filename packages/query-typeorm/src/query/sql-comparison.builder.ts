@@ -12,12 +12,7 @@ type CmpSQLType = { sql: string; params: ObjectLiteral }
  * @internal
  */
 export type EntityComparisonField<Entity, F extends keyof Entity> =
-  | Entity[F]
-  | Entity[F][]
-  | CommonFieldComparisonBetweenType<Entity[F]>
-  | true
-  | false
-  | null
+  Entity[F] | Entity[F][] | CommonFieldComparisonBetweenType<Entity[F]> | true | false | null
 
 /**
  * @internal

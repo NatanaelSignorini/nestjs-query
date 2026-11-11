@@ -1,38 +1,23 @@
 {
-  "extends": [
-    "../../.eslintrc.json"
-  ],
-  "ignorePatterns": [
-    "!**/*"
-  ],
+  "extends": ["../../.eslintrc.json"],
+  "ignorePatterns": ["!**/*"],
   "parserOptions": {
     "project": "./tsconfig.json"
   },
   "overrides": [
     {
-      "files": [
-        "*.ts",
-        "*.tsx",
-        "*.js",
-        "*.jsx"
-      ],
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
         "@typescript-eslint/no-unsafe-return": ["off"],
         "@typescript-eslint/no-unsafe-argument": ["off"]
       }
     },
     {
-      "files": [
-        "*.ts",
-        "*.tsx"
-      ],
+      "files": ["*.ts", "*.tsx"],
       "rules": {}
     },
     {
-      "files": [
-        "*.js",
-        "*.jsx"
-      ],
+      "files": ["*.js", "*.jsx"],
       "rules": {}
     }
   ]
