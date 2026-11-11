@@ -18,7 +18,7 @@ Agents must not:
 
 ## Before a human-triggered publish
 
-1. `main` is green on full **`ci (main)`** (lint/build/test matrix, e2e, federation).
+1. `main` is green on full **`check (main)`** (lint/build/test matrix, e2e, federation).
 2. CHANGELOG / version bumps reviewed.
 3. Confirm which packages and tags are intended (`@ptc-org/*` naming vs fork scope — follow maintainer instruction).
 4. Run the workflow from the GitHub Actions UI (or `gh workflow run`) with the required confirmation input.

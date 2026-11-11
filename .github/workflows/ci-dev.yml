@@ -72,8 +72,8 @@ jobs:
           NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
 
   # Required status check name for `dev` branch protection.
-  ci-dev:
-    name: ci (dev)
+  check-dev-gate:
+    name: check (dev)
     needs: [check-dev]
     if: always()
     runs-on: ubuntu-latest
@@ -86,9 +86,9 @@ jobs:
             exit 1
           fi
 
-  # Temporary alias while branch protection still lists `ci-dev`. Remove after protection PATCH.
+  # Temporary alias while branch protection still lists `ci (dev)`. Remove after protection PATCH.
   ci-dev-legacy:
-    name: ci-dev
+    name: ci (dev)
     needs: [check-dev]
     if: always()
     runs-on: ubuntu-latest

@@ -7,24 +7,24 @@
 | `dev`  | Default. Day-to-day integration. Feature/chore PRs target here.                 |
 | `main` | Production. Updated only via promote PR from `dev` (or rare CI/promote wiring). |
 
-- Protection on `dev`: require PR; required status check **`ci (dev)`** (strict); `enforce_admins`; approvals 0 (solo maintainer).
-- Protection on `main`: same shape with required check **`ci (main)`**.
+- Protection on `dev`: require PR; required status check **`check (dev)`** (strict); `enforce_admins`; approvals 0 (solo maintainer).
+- Protection on `main`: same shape with required check **`check (main)`**.
 - `delete_branch_on_merge` is enabled.
 - `CODEOWNERS`: `* @NatanaelSignorini`.
 
 ## Workflows
 
-Active definitions live under `.github/workflows/`. **Light and full gates are separate workflow files** so a push to `dev` never posts a skipped check named `ci (main)` on the same SHA (that footgun let promote PR #14 auto-merge without a real full gate).
+Active definitions live under `.github/workflows/`. **Light and full gates are separate workflow files** so a push to `dev` never posts a skipped check named `check (main)` on the same SHA (that footgun let promote PR #14 auto-merge without a real full gate).
 
 - **`ci-dev.yml`** — name **`CI (dev)`**
   - Triggers: `push` / `pull_request` to **`dev` only**.
-  - Jobs: `setup` → `check-dev` (Node `24.x` × `build` / `test` / `lint`) → aggregator **`ci (dev)`**.
+  - Jobs: `setup` → `check-dev` (Node `24.x` × `build` / `test` / `lint`) → aggregator **`check (dev)`**.
   - Concurrency: `ci-dev-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
 - **`ci.yml`** — name **`CI (main)`**
   - Triggers: `push` / `pull_request` to **`main` / `master` / `releases/*`**, plus `workflow_dispatch`.
-  - Jobs: `setup` → `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`ci (main)`**.
+  - Jobs: `setup` → `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`check (main)`**.
   - Concurrency: `ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
-- **`promote-dev.yml`** — on `workflow_run` of **`CI (dev)`** completed with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full **`ci (main)`** from workflow `CI (main)` on that PR gates merge into `main`.
+- **`promote-dev.yml`** — on `workflow_run` of **`CI (dev)`** completed with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full **`check (main)`** from workflow `CI (main)` on that PR gates merge into `main`.
   - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`. Without that, promote fails with `GitHub Actions is not permitted to create or approve pull requests`.
   - Set Actions secret **`PROMOTE_TOKEN`** to a maintainer PAT (repo `contents` + `pull_requests`). Promote uses it instead of `GITHUB_TOKEN` so the PR is not opened as `github-actions[bot]`. Bot-authored PRs leave CI / Code scanning in **`action_required`** until someone clicks **Approve and run workflows** (or `POST .../actions/runs/{id}/approve`).
   - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first, then re-promote.
@@ -36,30 +36,30 @@ Active definitions live under `.github/workflows/`. **Light and full gates are s
 
 ### Why two workflows
 
-GitHub associates check runs with the **commit SHA**. When light and full gates lived in one workflow, push-to-`dev` posted **`ci` = skipped**. A promote PR (`dev` → `main`) reused that SHA; required check `ci` looked “present” as skipped and auto-merge could proceed without e2e/federation. Splitting files means `dev` only ever gets `ci (dev)`, and `main` PRs only ever get `ci (main)`.
+GitHub associates check runs with the **commit SHA**. When light and full gates lived in one workflow, push-to-`dev` posted **`ci` = skipped**. A promote PR (`dev` → `main`) reused that SHA; required check `ci` looked “present” as skipped and auto-merge could proceed without e2e/federation. Splitting files means `dev` only ever gets `check (dev)`, and `main` PRs only ever get `check (main)`.
 
 ## What each gate runs
 
-### `check-dev` / `ci (dev)`
+### `check-dev` / `check (dev)`
 
 - `yarn nx run-many --target=lint|test|build --all` (build uses `--parallel=1`, cleans `dist`, retries once on failure).
 - Tests set `NODE_OPTIONS=--experimental-vm-modules`.
 - Setup action: Yarn install (immutable on PRs), cache, `npm rebuild better-sqlite3` (native modules; install may skip scripts).
 
-### Full `check` / `e2e-test` / `federation-e2e-test` / `ci (main)`
+### Full `check` / `e2e-test` / `federation-e2e-test` / `check (main)`
 
 - Same lint/build/test matrix on Node 24 and 26.
 - E2E: `NESTJS_QUERY_DB_TYPE` postgres or mysql; needs services from examples Docker Compose.
 - Federation: `examples/federation-v2-e2e` compose `--profile test`.
-- Aggregator `ci (main)` uses `if: always()` and fails unless all needed jobs succeeded — use **`ci (main)`** (and **`ci (dev)`** on `dev`) as the single required check names in branch protection.
+- Aggregator `check (main)` uses `if: always()` and fails unless all needed jobs succeeded — use **`check (main)`** (and **`check (dev)`** on `dev`) as the single required check names in branch protection.
 
 ## Agent checklist for a typical change
 
 1. Branch from `dev`.
 2. Implement + unit tests; run smallest `yarn nx lint|test|build <project>`.
-3. Open PR → `dev`; wait for **`ci (dev)`**.
+3. Open PR → `dev`; wait for **`check (dev)`**.
 4. Merge when green. Push to `dev` triggers promote when light CI succeeds.
-5. Watch the promote PR on `main` for full **`ci (main)`** (e2e/federation). Fix on a follow-up PR into `dev` if promote fails; do not bypass `main` protection casually.
+5. Watch the promote PR on `main` for full **`check (main)`** (e2e/federation). Fix on a follow-up PR into `dev` if promote fails; do not bypass `main` protection casually.
 
 ## Stuck Actions / ghost runs
 
