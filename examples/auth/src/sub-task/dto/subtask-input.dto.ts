@@ -1,6 +1,6 @@
 import { Field, ID, InputType } from '@nestjs/graphql'
 import { BeforeCreateMany, BeforeCreateOne, CreateManyInputType, CreateOneInputType } from '@ptc-org/nestjs-query-graphql'
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Allow, IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 import { UserContext } from '../../auth/auth.interfaces'
 
@@ -33,8 +33,10 @@ export class CreateSubTaskDTO {
   @IsNotEmpty()
   todoItemId!: string
 
-  // dont expose in the schema
+  // filled by BeforeCreate hooks; not exposed in GraphQL
+  @Allow()
   ownerId!: number
 
+  @Allow()
   createdBy!: string
 }

@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql'
-import { IsNotEmpty, IsString } from 'class-validator'
+import { Allow, IsNotEmpty, IsString } from 'class-validator'
 
 @InputType('TagInput')
 export class TagInputDTO {
@@ -7,4 +7,11 @@ export class TagInputDTO {
   @IsString()
   @IsNotEmpty()
   name!: string
+
+  // filled by BeforeCreate/Update hooks on TagDTO; not exposed in GraphQL
+  @Allow()
+  createdBy?: string
+
+  @Allow()
+  updatedBy?: string
 }
