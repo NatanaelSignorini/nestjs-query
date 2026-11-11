@@ -26,6 +26,8 @@ Active definitions live under `.github/workflows/`. **Light and full gates are s
   - Concurrency: `ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
 - **`promote-dev.yml`** — on `workflow_run` of **`CI Dev`** completed with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full **`ci`** from workflow `CI` on that PR gates merge into `main`.
   - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`. Without that, promote fails with `GitHub Actions is not permitted to create or approve pull requests`.
+  - Set Actions secret **`PROMOTE_TOKEN`** to a maintainer PAT (repo `contents` + `pull_requests`). Promote uses it instead of `GITHUB_TOKEN` so the PR is not opened as `github-actions[bot]`. Bot-authored PRs leave CI/CodeQL in **`action_required`** until someone clicks **Approve and run workflows** (or `POST .../actions/runs/{id}/approve`).
+  - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first, then re-promote.
 - **CodeQL** — runs on `main` / `master` / `dev`.
 - **Publish / release** — `workflow_dispatch` only (see [publishing.md](publishing.md)).
 - Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing these workflows.
