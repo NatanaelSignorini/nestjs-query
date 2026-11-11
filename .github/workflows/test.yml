@@ -58,8 +58,20 @@ jobs:
         if: matrix.target == 'build'
         run: yarn nx run workspace:version
 
+      # Nx tsc can flake with ENOTEMPTY when clearing dist/packages/* under parallel
+      # builds on Node 24 (query-graphql:build). Clean first and retry once.
+      - name: Clean dist outputs
+        if: matrix.target == 'build'
+        run: rm -rf dist
+
       - name: nx affected:${{ matrix.target }}
-        run: yarn nx run-many --target=${{ matrix.target }} --all
+        run: |
+          if [ "${{ matrix.target }}" = "build" ]; then
+            yarn nx run-many --target=build --all --parallel=1 \
+              || (rm -rf dist && yarn nx run-many --target=build --all --parallel=1)
+          else
+            yarn nx run-many --target=${{ matrix.target }} --all
+          fi
         env:
           # NestJS 12 ships ESM; Jest needs this for require(esm) under Nx.
           NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
