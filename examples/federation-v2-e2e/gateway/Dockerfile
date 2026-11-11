@@ -2,7 +2,7 @@
 # Apollo Gateway for Federation V2
 # Gateway doesn't need nestjs-query packages, simple single-stage build
 
-FROM node:22
+FROM node:24
 
 WORKDIR /app
 

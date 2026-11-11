@@ -18,7 +18,8 @@ import { TodoItemEntity } from './todo-item.entity'
           CreateDTOClass: TodoItemInputDTO,
           UpdateDTOClass: TodoItemUpdateDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+            pagingStrategy: PagingStrategies.NONE,
+            allowUnlimited: true
           }
         },
         {

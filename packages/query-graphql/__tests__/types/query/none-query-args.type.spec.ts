@@ -118,7 +118,8 @@ describe('None paging strategy QueryArgsType with manual options', (): void => {
   it('should make the filter required if there is a filterRequired field', async () => {
     @ArgsType()
     class TestFilterRequiredQuery extends QueryArgsType(TestFilterRequiredDto, {
-      pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+      pagingStrategy: PagingStrategies.NONE,
+      allowUnlimited: true
     }) {}
 
     @Resolver()
@@ -140,7 +141,8 @@ describe('None paging strategy QueryArgsType with manual options', (): void => {
 
     @ArgsType()
     class NoPagingQueryOptionsArgs extends QueryArgsType(NoPagingQueryOptionsDTO, {
-      pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
+      pagingStrategy: PagingStrategies.NONE,
+      allowUnlimited: true,
       defaultResultSize: 2,
       maxResultsSize: 5,
       defaultFilter: { booleanField: { is: true } },

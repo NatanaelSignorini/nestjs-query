@@ -4,7 +4,7 @@
 # ============================================
 # Stage 1: Build nestjs-query packages
 # ============================================
-FROM node:22 AS builder
+FROM node:24 AS builder
 
 WORKDIR /build
 
@@ -42,7 +42,7 @@ RUN npm pack --pack-destination /build/dist
 # ============================================
 # Stage 2: Build and run the service
 # ============================================
-FROM node:22
+FROM node:24
 
 WORKDIR /app
 

@@ -21,7 +21,8 @@ describe('QueryArgsType with decorator options', (): void => {
 
   @ObjectType('NoPagingQueryOptionsDTO')
   @QueryOptions({
-    pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
+    pagingStrategy: PagingStrategies.NONE,
+    allowUnlimited: true,
     defaultResultSize: 2,
     maxResultsSize: 5,
     defaultFilter: { booleanField: { is: true } },

@@ -24,7 +24,8 @@ import { TodoList } from '../entities/todo-list.entity'
         {
           EntityClass: TodoList,
           DTOClass: TodoListDto,
-          pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
+          pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true,
           // Key configuration: This enables ReferenceResolver which we're testing
           referenceBy: { key: 'id' }
         }

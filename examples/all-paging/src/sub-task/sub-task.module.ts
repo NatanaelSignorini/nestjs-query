@@ -18,7 +18,8 @@ import { SubTaskEntity } from './sub-task.entity'
           CreateDTOClass: CreateSubTaskDTO,
           UpdateDTOClass: SubTaskUpdateDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+            pagingStrategy: PagingStrategies.NONE,
+            allowUnlimited: true
           }
         },
         {

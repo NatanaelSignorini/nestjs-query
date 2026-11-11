@@ -20,9 +20,7 @@ describe('mass mutation security guards', () => {
     })
 
     it('allows empty filters when requireNonEmptyFilter is false', () => {
-      expect(() =>
-        assertNonEmptyClientFilter({}, { massMutations: { requireNonEmptyFilter: false } })
-      ).not.toThrow()
+      expect(() => assertNonEmptyClientFilter({}, { massMutations: { requireNonEmptyFilter: false } })).not.toThrow()
     })
 
     it('allows empty filters when resolver sets allowEmptyFilter', () => {
@@ -46,16 +44,16 @@ describe('mass mutation security guards', () => {
   })
 
   describe('assertMaxAffected', () => {
-    it('no-ops when maxAffected is unset', async () => {
-      await expect(assertMaxAffected(10_000)).resolves.toBeUndefined()
+    it('no-ops when maxAffected is unset', () => {
+      expect(() => assertMaxAffected(10_000)).not.toThrow()
     })
 
-    it('rejects when the count exceeds maxAffected', async () => {
-      await expect(assertMaxAffected(11, { massMutations: { maxAffected: 10 } })).rejects.toThrow(BadRequestException)
+    it('rejects when the count exceeds maxAffected', () => {
+      expect(() => assertMaxAffected(11, { massMutations: { maxAffected: 10 } })).toThrow(BadRequestException)
     })
 
-    it('allows counts within maxAffected', async () => {
-      await expect(assertMaxAffected(10, { massMutations: { maxAffected: 10 } })).resolves.toBeUndefined()
+    it('allows counts within maxAffected', () => {
+      expect(() => assertMaxAffected(10, { massMutations: { maxAffected: 10 } })).not.toThrow()
     })
   })
 

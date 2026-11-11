@@ -52,14 +52,16 @@ describe('Federation Reference Resolution Integration Test', () => {
             {
               EntityClass: TodoList,
               DTOClass: TodoListDto,
-              pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
+              pagingStrategy: PagingStrategies.NONE,
+              allowUnlimited: true,
               // This enables ReferenceResolver with @ResolveReference()
               referenceBy: { key: 'id' }
             },
             {
               EntityClass: TodoItem,
               DTOClass: TodoItemDto,
-              pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
+              pagingStrategy: PagingStrategies.NONE,
+              allowUnlimited: true,
               // This enables ReferenceResolver with @ResolveReference()
               referenceBy: { key: 'id' }
             }

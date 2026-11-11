@@ -182,7 +182,7 @@ export const Updatable =
         const { update, filter } = input.input
         assertNonEmptyClientFilter(filter, this.security, opts.many)
         const mergedFilter = mergeFilter(filter, authorizeFilter ?? {})
-        await assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        assertMaxAffected(await this.service.count(mergedFilter), this.security)
         const updateManyResponse = await this.service.updateMany(update, mergedFilter)
         if (enableManySubscriptions) {
           await this.publishUpdatedManyEvent(updateManyResponse, authorizeFilter)

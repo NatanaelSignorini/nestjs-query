@@ -14,10 +14,7 @@ export class MissingAuthorizerError extends Error {
   }
 }
 
-export function assertAuthorizersConfigured(
-  DTOClasses: Class<unknown>[],
-  authorization: AuthorizationMode = 'required'
-): void {
+export function assertAuthorizersConfigured(DTOClasses: Class<unknown>[], authorization: AuthorizationMode = 'required'): void {
   if (authorization !== 'required') {
     return
   }

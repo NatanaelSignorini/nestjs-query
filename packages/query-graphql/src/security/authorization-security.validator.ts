@@ -2,11 +2,7 @@ import { Inject, Injectable, OnModuleInit, Optional, Provider } from '@nestjs/co
 import { Class } from '@ptc-org/nestjs-query-core'
 
 import { assertAuthorizersConfigured } from './assert-authorizers'
-import {
-  DEFAULT_SECURITY_OPTIONS,
-  NESTJS_QUERY_SECURITY_OPTIONS,
-  NestjsQuerySecurityOptions
-} from './security-options'
+import { DEFAULT_SECURITY_OPTIONS, NESTJS_QUERY_SECURITY_OPTIONS, NestjsQuerySecurityOptions } from './security-options'
 
 export function createAuthorizationSecurityValidator(DTOClasses: Class<unknown>[]): Provider {
   @Injectable()

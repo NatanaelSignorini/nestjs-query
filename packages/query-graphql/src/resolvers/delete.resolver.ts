@@ -170,7 +170,7 @@ export const Deletable =
       ): Promise<DeleteManyResponse> {
         assertNonEmptyClientFilter(input.input.filter, this.security, opts.many)
         const mergedFilter = mergeFilter(input.input.filter, authorizeFilter ?? {})
-        await assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        assertMaxAffected(await this.service.count(mergedFilter), this.security)
         const deleteManyResponse = await this.service.deleteMany(mergedFilter, {
           useSoftDelete: opts?.useSoftDelete ?? false
         })
