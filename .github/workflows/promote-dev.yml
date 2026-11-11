@@ -3,6 +3,10 @@ name: Promote dev to main
 # After light CI Dev succeeds on a push to `dev`, open/update a PR to `main`
 # and enable auto-merge. Branch protection on `main` still requires the full `ci` check
 # from workflow `CI` (which only runs for main/master PRs and pushes).
+#
+# Use secrets.PROMOTE_TOKEN (classic PAT or fine-grained with contents+PR on this repo)
+# so the PR is authored by a human user and CI/CodeQL run without "Approve and run".
+# GITHUB_TOKEN PRs from github-actions[bot] stay stuck in action_required until approved.
 on:
   workflow_run:
     workflows: [CI Dev]
@@ -22,10 +26,14 @@ jobs:
     steps:
       - name: Create or refresh promote PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROMOTE_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+
+          if [ -z "${{ secrets.PROMOTE_TOKEN }}" ]; then
+            echo "::warning::PROMOTE_TOKEN is not set; using GITHUB_TOKEN. Promote PRs may require manual Approve and run for CI/CodeQL."
+          fi
 
           existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // empty')"
           if [ -z "$existing" ]; then
@@ -42,4 +50,7 @@ jobs:
           fi
 
           echo "Promote PR #$existing"
-          gh pr merge "$existing" --auto --merge
+          # Keep the branch up to date when main moved (strict required checks).
+          gh pr merge "$existing" --auto --merge || true
+          # Update branch if GitHub reports behind (best-effort; needs admin or allow update).
+          gh api -X PUT "repos/${GH_REPO}/pulls/${existing}/update-branch" || true
