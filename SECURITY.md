@@ -45,13 +45,65 @@ When `authorization: 'required'`:
 
 In a future major release, `required` is expected to become the default.
 
+## Mass-mutation guards (Phase 2.2)
+
+Defaults (also applied when `forRoot` is omitted):
+
+| Option | Default | Effect |
+|---|---|---|
+| `massMutations.requireNonEmptyFilter` | `true` | `updateMany` / `deleteMany` need a client filter with field comparisons (auth-only filters are not enough) |
+| `massMutations.maxBatchSize` | `100` | Max items in `createMany` (`false` disables) |
+| `massMutations.maxAffected` | unset | Optional pre-count cap for `updateMany` / `deleteMany` |
+
+```ts
+NestjsQueryGraphQLModule.forRoot({
+  security: {
+    massMutations: {
+      requireNonEmptyFilter: true,
+      maxBatchSize: 100,
+      maxAffected: 1000
+    }
+  }
+})
+
+// Per-resolver escape hatch for admin-style empty filters:
+// update: { many: { allowEmptyFilter: true } }
+// delete: { many: { allowEmptyFilter: true } }
+```
+
+## Paging caps (Phase 2.3)
+
+| Option | Default | Effect |
+|---|---|---|
+| `paging.maxResultsSize` | `100` | Default page cap for cursor/offset queries (and export) |
+| `paging.requireAllowUnlimitedForNone` | `true` | `pagingStrategy: NONE` needs `allowUnlimited: true` |
+| `paging.requireAllowUnlimitedForDisabledMax` | `true` | `maxResultsSize: -1` needs `allowUnlimited: true` |
+
+```ts
+NestjsQueryGraphQLModule.forRoot({
+  security: {
+    paging: {
+      maxResultsSize: 100,
+      requireAllowUnlimitedForNone: true,
+      requireAllowUnlimitedForDisabledMax: true
+    }
+  }
+})
+
+// Explicit unlimited root queries:
+// pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+// maxResultsSize: -1, allowUnlimited: true
+
+// @UnPagedRelation already sets allowUnlimited for nested collections.
+```
+
 ## Hardening roadmap
 
 This fork prioritizes:
 
 1. Authorization fail-closed defaults — **available** (`security.authorization`)
-2. Guards against empty `updateMany` / `deleteMany` filters
-3. Global max page / batch sizes
+2. Guards against empty `updateMany` / `deleteMany` filters — **available** (`security.massMutations`)
+3. Global max page / batch sizes — **available** (`security.paging` + createMany `maxBatchSize`)
 4. GraphQL query complexity and filter depth limits
 5. TypeORM filter allowlisting and safe operators
 

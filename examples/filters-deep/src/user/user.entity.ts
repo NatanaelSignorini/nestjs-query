@@ -6,7 +6,7 @@ import { PostEntity } from '../post/post.entity'
 
 @Entity({ name: 'user' })
 @ObjectType('User')
-@QueryOptions({ filterDepth: Number.POSITIVE_INFINITY, pagingStrategy: PagingStrategies.NONE })
+@QueryOptions({ filterDepth: Number.POSITIVE_INFINITY, pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
 @FilterableUnPagedRelation('posts', () => PostEntity)
 export class UserEntity {
   @PrimaryGeneratedColumn()

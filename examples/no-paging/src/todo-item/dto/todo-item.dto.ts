@@ -5,7 +5,7 @@ import { SubTaskDTO } from '../../sub-task/dto/sub-task.dto'
 import { TagDTO } from '../../tag/dto/tag.dto'
 
 @ObjectType('TodoItem')
-@QueryOptions({ pagingStrategy: PagingStrategies.NONE })
+@QueryOptions({ pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
 @UnPagedRelation('subTasks', () => SubTaskDTO, {
   update: { enabled: true }
 })

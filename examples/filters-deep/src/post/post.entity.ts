@@ -7,7 +7,7 @@ import { UserEntity } from '../user/user.entity'
 
 @Entity({ name: 'post' })
 @ObjectType('Post')
-@QueryOptions({ filterDepth: 2, pagingStrategy: PagingStrategies.NONE })
+@QueryOptions({ filterDepth: 2, pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
 @FilterableUnPagedRelation('categories', () => CategoryEntity)
 @FilterableUnPagedRelation('authors', () => UserEntity)
 export class PostEntity {

@@ -11,6 +11,7 @@ import {
   getFilterComparisons,
   getFilterFields,
   getFilterOmitting,
+  isEmptyFilter,
   mergeFilter,
   mergeFilters,
   Paging,
@@ -646,6 +647,26 @@ describe('applyFilter', () => {
       expect(applyFilter(singleNestedNull(), { child: { first: { isNot: null } } })).toBe(false)
       expect(applyFilter(doubleNestedNull(), { child: { child: { first: { isNot: null } } } })).toBe(false)
     })
+  })
+})
+
+describe('isEmptyFilter', () => {
+  type TestDTO = { id: number; name: string }
+
+  it('should treat undefined/null/empty object as empty', () => {
+    expect(isEmptyFilter()).toBe(true)
+    expect(isEmptyFilter(null)).toBe(true)
+    expect(isEmptyFilter<TestDTO>({})).toBe(true)
+  })
+
+  it('should treat empty and/or trees as empty', () => {
+    expect(isEmptyFilter<TestDTO>({ and: [] })).toBe(true)
+    expect(isEmptyFilter<TestDTO>({ or: [{}] })).toBe(true)
+  })
+
+  it('should treat filters with field comparisons as non-empty', () => {
+    expect(isEmptyFilter<TestDTO>({ id: { eq: 1 } })).toBe(false)
+    expect(isEmptyFilter<TestDTO>({ and: [{ name: { eq: 'a' } }] })).toBe(false)
   })
 })
 

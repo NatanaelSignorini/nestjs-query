@@ -110,6 +110,16 @@ export const getFilterFields = <DTO>(filter: Filter<DTO>): string[] => {
   return [...fieldSet]
 }
 
+/**
+ * True when the filter has no field comparisons (including empty `and`/`or` trees).
+ */
+export const isEmptyFilter = <DTO>(filter?: Filter<DTO> | null): boolean => {
+  if (!filter) {
+    return true
+  }
+  return getFilterFields(filter).length === 0
+}
+
 export const getFilterComparisons = <DTO, K extends keyof FilterComparisons<DTO>>(
   filter: Filter<DTO>,
   key: K

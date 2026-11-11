@@ -17,7 +17,7 @@ import { TagEntity } from './tag.entity'
           CreateDTOClass: TagInputDTO,
           UpdateDTOClass: TagInputDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE
+            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
           }
         },
         {

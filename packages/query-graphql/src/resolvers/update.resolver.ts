@@ -1,4 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
+import { Inject, Optional } from '@nestjs/common'
 import { Args, ArgsType, InputType, PartialType, Resolver } from '@nestjs/graphql'
 import {
   Class,
@@ -16,6 +17,12 @@ import { DTONames, getDTONames } from '../common'
 import { AuthorizerFilter, MutationHookArgs, ResolverMutation, ResolverSubscription } from '../decorators'
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
+import {
+  assertMaxAffected,
+  assertNonEmptyClientFilter,
+  NESTJS_QUERY_SECURITY_OPTIONS,
+  NestjsQuerySecurityOptions
+} from '../security'
 import { EventType, getDTOEventName } from '../subscription'
 import {
   MutationArgsType,
@@ -34,6 +41,7 @@ export interface UpdateResolverOpts<DTO, U = DeepPartial<DTO>> extends Subscript
   UpdateDTOClass?: Class<U>
   UpdateOneInput?: Class<UpdateOneInputType<U>>
   UpdateManyInput?: Class<UpdateManyInputType<DTO, U>>
+  many?: SubscriptionResolverOpts['many'] & { allowEmptyFilter?: boolean }
 }
 
 export interface UpdateResolver<DTO, U, QS extends QueryService<DTO, unknown, U>> extends ServiceResolver<DTO, QS> {
@@ -125,6 +133,10 @@ export const Updatable =
 
     @Resolver(() => DTOClass, { isAbstract: true })
     class UpdateResolverBase extends BaseClass {
+      @Optional()
+      @Inject(NESTJS_QUERY_SECURITY_OPTIONS)
+      readonly security?: NestjsQuerySecurityOptions
+
       @ResolverMutation(
         () => DTOClass,
         { name: updateOneMutationName, description: opts?.one?.description, complexity: opts?.one?.complexity },
@@ -168,7 +180,10 @@ export const Updatable =
         authorizeFilter?: Filter<DTO>
       ): Promise<UpdateManyResponse> {
         const { update, filter } = input.input
-        const updateManyResponse = await this.service.updateMany(update, mergeFilter(filter, authorizeFilter ?? {}))
+        assertNonEmptyClientFilter(filter, this.security, opts.many)
+        const mergedFilter = mergeFilter(filter, authorizeFilter ?? {})
+        await assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        const updateManyResponse = await this.service.updateMany(update, mergedFilter)
         if (enableManySubscriptions) {
           await this.publishUpdatedManyEvent(updateManyResponse, authorizeFilter)
         }
