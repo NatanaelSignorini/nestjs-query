@@ -57,8 +57,7 @@ async function validateArgs<T>(value: T, type?: Class<T>): Promise<T> {
 
 function removeGqlArgsPipesMetadata(target: object, methodName: string | symbol, paramIndex: number): void {
   const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, methodName) as
-    | Record<string, { index: number }>
-    | undefined
+    Record<string, { index: number }> | undefined
   if (!metadata) {
     return
   }
