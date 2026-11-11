@@ -10,7 +10,7 @@ import { AuthorizerFilter, MutationHookArgs, ResolverMutation, ResolverSubscript
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
 import {
-  assertMaxAffected,
+  assertMaxAffectedFromCount,
   assertNonEmptyClientFilter,
   NESTJS_QUERY_SECURITY_OPTIONS,
   NestjsQuerySecurityOptions
@@ -170,7 +170,7 @@ export const Deletable =
       ): Promise<DeleteManyResponse> {
         assertNonEmptyClientFilter(input.input.filter, this.security, opts.many)
         const mergedFilter = mergeFilter(input.input.filter, authorizeFilter ?? {})
-        await assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        await assertMaxAffectedFromCount(() => this.service.count(mergedFilter), this.security)
         const deleteManyResponse = await this.service.deleteMany(mergedFilter, {
           useSoftDelete: opts?.useSoftDelete ?? false
         })

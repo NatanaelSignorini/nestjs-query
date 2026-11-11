@@ -18,12 +18,15 @@ import { TodoItemEntity } from './todo-item.entity'
           CreateDTOClass: TodoItemInputDTO,
           UpdateDTOClass: TodoItemUpdateDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+            pagingStrategy: PagingStrategies.NONE,
+            allowUnlimited: true
           }
         },
         {
           DTOClass: TodoItemDTO,
           EntityClass: TodoItemEntity,
+          // Alternate paging roots share DTOClass; Nest GraphQL 14 forbids duplicate relation fields.
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },
@@ -37,6 +40,7 @@ import { TodoItemEntity } from './todo-item.entity'
         {
           DTOClass: TodoItemDTO,
           EntityClass: TodoItemEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },

@@ -517,7 +517,7 @@ describe('SubTaskResolver (limitOffset - e2e)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body.errors).toHaveLength(1)
-          expect(JSON.stringify(body.errors[0])).toContain('filter must be a non-empty object')
+          expect(JSON.stringify(body.errors[0])).toMatch(/non-empty (?:object|client filter)/)
         }))
   })
 
@@ -635,7 +635,7 @@ describe('SubTaskResolver (limitOffset - e2e)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body.errors).toHaveLength(1)
-          expect(JSON.stringify(body.errors[0])).toContain('filter must be a non-empty object')
+          expect(JSON.stringify(body.errors[0])).toMatch(/non-empty (?:object|client filter)/)
         }))
   })
 

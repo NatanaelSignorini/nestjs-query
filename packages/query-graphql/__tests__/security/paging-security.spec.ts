@@ -24,9 +24,7 @@ describe('paging security', () => {
   })
 
   it('allows pagingStrategy NONE with allowUnlimited', () => {
-    expect(() =>
-      QueryArgsType(TestDTO, { pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
-    ).not.toThrow()
+    expect(() => QueryArgsType(TestDTO, { pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })).not.toThrow()
   })
 
   it('rejects maxResultsSize -1 without allowUnlimited by default', () => {

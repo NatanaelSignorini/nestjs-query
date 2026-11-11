@@ -17,12 +17,14 @@ import { TagEntity } from './tag.entity'
           CreateDTOClass: TagInputDTO,
           UpdateDTOClass: TagInputDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+            pagingStrategy: PagingStrategies.NONE,
+            allowUnlimited: true
           }
         },
         {
           DTOClass: TagDTO,
           EntityClass: TagEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },
@@ -36,6 +38,7 @@ import { TagEntity } from './tag.entity'
         {
           DTOClass: TagDTO,
           EntityClass: TagEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },

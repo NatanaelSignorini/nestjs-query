@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql'
 import { BeforeUpdateMany, BeforeUpdateOne, UpdateManyInputType, UpdateOneInputType } from '@ptc-org/nestjs-query-graphql'
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
+import { Allow, IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
 
 import { GqlContext } from '../../auth.guard'
 import { getUserName } from '../../helpers'
@@ -33,4 +33,8 @@ export class TodoItemUpdateDTO {
   @IsNumber()
   @Field({ nullable: true })
   priority?: number
+
+  // filled by BeforeUpdate hooks; not exposed in GraphQL
+  @Allow()
+  updatedBy?: string
 }

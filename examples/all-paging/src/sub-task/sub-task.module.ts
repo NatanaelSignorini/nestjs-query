@@ -18,12 +18,14 @@ import { SubTaskEntity } from './sub-task.entity'
           CreateDTOClass: CreateSubTaskDTO,
           UpdateDTOClass: SubTaskUpdateDTO,
           read: {
-            pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+            pagingStrategy: PagingStrategies.NONE,
+            allowUnlimited: true
           }
         },
         {
           DTOClass: SubTaskDTO,
           EntityClass: SubTaskEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },
@@ -37,6 +39,7 @@ import { SubTaskEntity } from './sub-task.entity'
         {
           DTOClass: SubTaskDTO,
           EntityClass: SubTaskEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },

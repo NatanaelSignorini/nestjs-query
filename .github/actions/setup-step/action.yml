@@ -3,7 +3,7 @@ description: 'Setup Step'
 author: 'Tycho Bokdam'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Get Node version
       id: node-version
@@ -15,7 +15,8 @@ runs:
       uses: actions/cache@v6
       with:
         path: |
-          ~/.cache/mongodb-memory-server
+          ~/.cache/mongodb-binaries
+          **/node_modules/.cache
           **/node_modules
         key: cache-node-modules-${{ steps.node-version.outputs.version }}-${{ hashFiles('yarn.lock') }}
 
@@ -23,3 +24,11 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: yarn install --immutable
+
+    # enableScripts is false (Windows-friendly); unit tests need native bindings for
+    # better-sqlite3 / sqlite3. Rebuild for this Node ABI after install or cache restore.
+    - name: Rebuild native modules
+      shell: bash
+      run: |
+        npm rebuild better-sqlite3
+        if [ -d node_modules/sqlite3 ]; then npm rebuild sqlite3; fi

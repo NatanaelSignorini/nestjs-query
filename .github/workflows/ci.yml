@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -58,8 +58,23 @@ jobs:
         if: matrix.target == 'build'
         run: yarn nx run workspace:version
 
+      # Nx tsc can flake with ENOTEMPTY when clearing dist/packages/* under parallel
+      # builds on Node 24 (query-graphql:build). Clean first and retry once.
+      - name: Clean dist outputs
+        if: matrix.target == 'build'
+        run: rm -rf dist
+
       - name: nx affected:${{ matrix.target }}
-        run: yarn nx run-many --target=${{ matrix.target }} --all
+        run: |
+          if [ "${{ matrix.target }}" = "build" ]; then
+            yarn nx run-many --target=build --all --parallel=1 \
+              || (rm -rf dist && yarn nx run-many --target=build --all --parallel=1)
+          else
+            yarn nx run-many --target=${{ matrix.target }} --all
+          fi
+        env:
+          # NestJS 12 ships ESM; Jest needs this for require(esm) under Nx.
+          NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
 
       - name: Codecov
         uses: codecov/codecov-action@v7
@@ -76,7 +91,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [ 22.x, 24.x ]
+        # NestJS 12 ships ESM; Jest on Node 22 cannot load @nestjs/* (needs 24.9+ require(esm)).
+        node-version: [ 24.x, 26.x ]
         db-type: ['postgres', 'mysql']
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
@@ -98,6 +114,7 @@ jobs:
         run: yarn nx run-many --target=e2e --all
         env:
           NESTJS_QUERY_DB_TYPE: ${{ matrix.db-type }}
+          NODE_OPTIONS: --experimental-vm-modules
 
       - name: Codecov
         uses: codecov/codecov-action@v7

@@ -2,7 +2,7 @@
 # Apollo Gateway for Federation V2
 # Gateway doesn't need nestjs-query packages, simple single-stage build
 
-FROM node:22
+FROM node:24
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY examples/federation-v2-e2e/gateway/package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY examples/federation-v2-e2e/gateway/src ./src

@@ -14,6 +14,7 @@ import { PubSub } from 'graphql-subscriptions'
 
 import { InjectPubSub } from '../decorators'
 import { CRUDResolver, CRUDResolverOpts, FederationResolver } from '../resolvers'
+import { createGroupByDateFieldsResolver } from '../resolvers/aggregate/group-by-aggregate.resolver'
 import { PagingStrategies } from '../types/query/paging'
 
 export type CRUDAutoResolverOpts<DTO, C, U, R, PS extends PagingStrategies> = CRUDResolverOpts<DTO, C, U, R, PS> & {
@@ -74,8 +75,27 @@ export const isServiceCRUDAutoResolverOpts = <DTO, MaybeService, C, U, R, PS ext
   opts: AutoResolverOpts<DTO, MaybeService, C, U, R, PS>
 ): opts is ServiceCRUDAutoResolverOpts<DTO, MaybeService, C, U, R, PS> => 'DTOClass' in opts && 'ServiceClass' in opts
 
-const getResolverToken = <DTO>(DTOClass: Class<DTO>): string => `${DTOClass.name}AutoResolver`
+const getResolverToken = <DTO>(DTOClass: Class<DTO>, discriminator?: string): string =>
+  discriminator ? `${DTOClass.name}AutoResolver_${discriminator}` : `${DTOClass.name}AutoResolver`
 const getFederatedResolverToken = <DTO>(DTOClass: Class<DTO>): string => `${DTOClass.name}FederatedAutoResolver`
+
+const getResolverDiscriminator = (resolverOpts: {
+  pagingStrategy?: PagingStrategies
+  read?: { connectionName?: string; many?: boolean | { name?: string; disabled?: boolean } }
+}): string | undefined => {
+  const connectionName = resolverOpts.read?.connectionName
+  if (typeof connectionName === 'string' && connectionName.length > 0) {
+    return connectionName
+  }
+  const many = resolverOpts.read?.many
+  if (many && typeof many === 'object' && typeof many.name === 'string' && many.name.length > 0) {
+    return many.name
+  }
+  if (resolverOpts.pagingStrategy && resolverOpts.pagingStrategy !== PagingStrategies.CURSOR) {
+    return String(resolverOpts.pagingStrategy)
+  }
+  return undefined
+}
 
 function createFederatedResolver<DTO, Service>(resolverOpts: FederatedAutoResolverOpts<DTO, Service>): Provider {
   const { DTOClass } = resolverOpts
@@ -118,8 +138,11 @@ function createEntityAutoResolver<DTO, Entity extends DeepPartial<Entity>, C, U,
     }
   }
 
-  // need to set class name so DI works properly
-  Object.defineProperty(AutoResolver, 'name', { value: getResolverToken(DTOClass), writable: false })
+  // Unique names when multiple AutoResolvers share a DTOClass (alternate paging roots).
+  Object.defineProperty(AutoResolver, 'name', {
+    value: getResolverToken(DTOClass, getResolverDiscriminator(resolverOpts)),
+    writable: false
+  })
   return AutoResolver
 }
 
@@ -139,8 +162,10 @@ function createAssemblerAutoResolver<DTO, Asmblr, C, U, R, PS extends PagingStra
     }
   }
 
-  // need to set class name so DI works properly
-  Object.defineProperty(AutoResolver, 'name', { value: getResolverToken(DTOClass), writable: false })
+  Object.defineProperty(AutoResolver, 'name', {
+    value: getResolverToken(DTOClass, getResolverDiscriminator(resolverOpts)),
+    writable: false
+  })
   return AutoResolver
 }
 
@@ -159,8 +184,10 @@ function createServiceAutoResolver<DTO, Service, C, U, R, PS extends PagingStrat
     }
   }
 
-  // need to set class name so DI works properly
-  Object.defineProperty(AutoResolver, 'name', { value: getResolverToken(DTOClass), writable: false })
+  Object.defineProperty(AutoResolver, 'name', {
+    value: getResolverToken(DTOClass, getResolverDiscriminator(resolverOpts)),
+    writable: false
+  })
   return AutoResolver
 }
 
@@ -186,4 +213,17 @@ function createResolver<
 
 export const createResolvers = (
   opts: AutoResolverOpts<unknown, unknown, unknown, unknown, unknown, PagingStrategies>[]
-): Provider[] => opts.map((opt) => createResolver(opt))
+): Provider[] =>
+  opts.flatMap((opt) => {
+    const resolver = createResolver(opt)
+    if (isFederatedResolverOpts(opt)) {
+      return [resolver]
+    }
+
+    const aggregateOpts = {
+      enabled: opt.enableAggregate ?? opt.aggregate?.enabled,
+      AggregateDTOClass: opt.AggregateDTOClass ?? opt.aggregate?.AggregateDTOClass
+    }
+    const groupByResolver = createGroupByDateFieldsResolver(opt.DTOClass, aggregateOpts)
+    return groupByResolver ? [resolver, groupByResolver] : [resolver]
+  })

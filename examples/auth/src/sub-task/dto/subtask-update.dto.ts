@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql'
 import { BeforeUpdateMany, BeforeUpdateOne, UpdateManyInputType, UpdateOneInputType } from '@ptc-org/nestjs-query-graphql'
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Allow, IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 import { UserContext } from '../../auth/auth.interfaces'
 import { SubTaskDTO } from './sub-task.dto'
@@ -39,6 +39,7 @@ export class SubTaskUpdateDTO {
   @IsNotEmpty()
   todoItemId?: string
 
-  // dont expose these fields in the graphql schema
+  // filled by BeforeUpdate hooks; not exposed in GraphQL
+  @Allow()
   updatedBy!: string
 }

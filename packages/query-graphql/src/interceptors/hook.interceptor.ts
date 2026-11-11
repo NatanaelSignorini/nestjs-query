@@ -5,11 +5,26 @@ import { Class } from '@ptc-org/nestjs-query-core'
 import { getHooksForType } from '../decorators'
 import { getHookToken, Hook, HookTypes } from '../hooks'
 
-export type HookContext<H extends Hook<unknown>> = { hooks?: H[] }
+export type HookContext<H extends Hook<unknown>> = {
+  hooks?: H[]
+  req?: { nestjsQueryHooks?: H[] }
+  request?: { nestjsQueryHooks?: H[] }
+}
 
 class DefaultHookInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
     return next.handle()
+  }
+}
+
+function attachHooksToContext<H extends Hook<unknown>>(ctx: HookContext<H>, hooks: H[]): void {
+  ctx.hooks = hooks
+  // Also store on the request object so shallow GraphQL context clones still see hooks.
+  if (ctx.req && typeof ctx.req === 'object') {
+    ctx.req.nestjsQueryHooks = hooks
+  }
+  if (ctx.request && typeof ctx.request === 'object') {
+    ctx.request.nestjsQueryHooks = hooks
   }
 }
 
@@ -27,7 +42,7 @@ export function HookInterceptor(type: HookTypes, ...DTOClasses: Class<unknown>[]
     intercept(context: ExecutionContext, next: CallHandler) {
       const gqlContext = GqlExecutionContext.create(context)
       const ctx = gqlContext.getContext<HookContext<Hook<unknown>>>()
-      ctx.hooks = this.hooks
+      attachHooksToContext(ctx, this.hooks)
       return next.handle()
     }
   }

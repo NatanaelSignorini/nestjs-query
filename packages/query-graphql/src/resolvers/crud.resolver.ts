@@ -43,6 +43,11 @@ export interface CRUDResolverOpts<
   allowUnlimited?: boolean
   maxResultsSize?: number
   enableAggregate?: boolean
+  /**
+   * When false, this resolver does not register DTO relation/reference fields.
+   * Use on alternate paging roots that share a DTOClass with a primary resolver.
+   */
+  enableRelations?: boolean
   create?: CreateResolverOpts<DTO, C>
   read?: R
   update?: UpdateResolverOpts<DTO, U>
@@ -70,8 +75,8 @@ export interface CRUDResolver<
 function extractRelatableOpts<DTO>(
   opts: CRUDResolverOpts<DTO, unknown, unknown, ReadResolverOpts<DTO>, PagingStrategies, unknown>
 ): RelatableOpts {
-  const { enableTotalCount, enableAggregate } = opts
-  return mergeBaseResolverOpts<RelatableOpts>({ enableAggregate, enableTotalCount }, opts)
+  const { enableTotalCount, enableAggregate, enableRelations } = opts
+  return mergeBaseResolverOpts<RelatableOpts>({ enableAggregate, enableTotalCount, enableRelations }, opts)
 }
 
 function extractAggregateResolverOpts<DTO>(

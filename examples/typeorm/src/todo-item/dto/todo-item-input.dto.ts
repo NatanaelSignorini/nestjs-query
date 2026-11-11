@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql'
 import { BeforeCreateMany, BeforeCreateOne, CreateManyInputType, CreateOneInputType } from '@ptc-org/nestjs-query-graphql'
-import { IsBoolean, IsString, MaxLength } from 'class-validator'
+import { Allow, IsBoolean, IsString, MaxLength } from 'class-validator'
 
 import { GqlContext } from '../../auth.guard'
 import { getUserName } from '../../helpers'
@@ -27,4 +27,8 @@ export class TodoItemInputDTO {
   @IsBoolean()
   @Field()
   completed!: boolean
+
+  // filled by BeforeCreate hooks; not exposed in GraphQL
+  @Allow()
+  createdBy?: string
 }

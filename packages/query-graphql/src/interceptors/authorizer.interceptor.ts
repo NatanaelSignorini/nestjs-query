@@ -1,12 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NestInterceptor,
-  Optional
-} from '@nestjs/common'
+import { CallHandler, ExecutionContext, ForbiddenException, Inject, Injectable, NestInterceptor, Optional } from '@nestjs/common'
 import { GqlExecutionContext } from '@nestjs/graphql'
 import { Class } from '@ptc-org/nestjs-query-core'
 

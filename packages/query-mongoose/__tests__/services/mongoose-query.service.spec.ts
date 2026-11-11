@@ -52,7 +52,7 @@ describe('MongooseQueryService', () => {
       ],
       providers: [TestReferenceService, TestEntityService]
     }).compile()
-  })
+  }, 120000)
 
   function convertDocument<Doc extends Document<any>>(doc: Doc): Doc {
     return doc.toObject({ virtuals: true })
