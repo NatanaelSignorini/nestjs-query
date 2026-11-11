@@ -19,12 +19,15 @@ import { MutationArgsType } from '../types'
  */
 const GQL_ARGS_PARAM_TYPE = 3
 
+// Soften forbidUnknownValues: nested GraphQL CreateDTO trees are often plain
+// objects until class-transformer runs; strict mode rejects them with
+// "an unknown value was passed to the validate function".
 const ARGS_VALIDATION_PIPE = new ValidationPipe({
   transform: true,
   whitelist: true,
   forbidNonWhitelisted: true,
   skipMissingProperties: false,
-  forbidUnknownValues: true
+  forbidUnknownValues: false
 })
 
 function transformValue<T>(value: T, type?: Class<T>): T {

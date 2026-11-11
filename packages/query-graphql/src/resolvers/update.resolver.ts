@@ -18,7 +18,7 @@ import { AuthorizerFilter, MutationHookArgs, ResolverMutation, ResolverSubscript
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
 import {
-  assertMaxAffected,
+  assertMaxAffectedFromCount,
   assertNonEmptyClientFilter,
   NESTJS_QUERY_SECURITY_OPTIONS,
   NestjsQuerySecurityOptions
@@ -182,7 +182,7 @@ export const Updatable =
         const { update, filter } = input.input
         assertNonEmptyClientFilter(filter, this.security, opts.many)
         const mergedFilter = mergeFilter(filter, authorizeFilter ?? {})
-        assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        await assertMaxAffectedFromCount(() => this.service.count(mergedFilter), this.security)
         const updateManyResponse = await this.service.updateMany(update, mergedFilter)
         if (enableManySubscriptions) {
           await this.publishUpdatedManyEvent(updateManyResponse, authorizeFilter)

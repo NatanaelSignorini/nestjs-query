@@ -3,6 +3,7 @@ export { createAuthorizationSecurityValidator } from './authorization-security.v
 export {
   assertCreateManyBatchSize,
   assertMaxAffected,
+  assertMaxAffectedFromCount,
   assertNonEmptyClientFilter,
   MassMutationResolverSecurityOpts,
   resolveMassMutationSecurity

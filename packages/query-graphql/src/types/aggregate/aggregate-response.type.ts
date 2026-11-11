@@ -1,5 +1,12 @@
-import { Field, Float, Int, ObjectType } from '@nestjs/graphql'
-import { AggregateResponse, Class, MapReflector, NumberAggregate, TypeAggregate } from '@ptc-org/nestjs-query-core'
+import { Args, Field, Float, Int, ObjectType } from '@nestjs/graphql'
+import {
+  AggregateResponse,
+  Class,
+  GroupBy,
+  MapReflector,
+  NumberAggregate,
+  TypeAggregate
+} from '@ptc-org/nestjs-query-core'
 import { GraphQLScalarType } from 'graphql'
 
 import { getGraphqlObjectName } from '../../common'
@@ -29,6 +36,15 @@ function AggregateGroupByType<DTO>(name: string, fields: FilterableFieldDescript
   fields.forEach(({ propertyName, schemaName, target, returnTypeFunc }) => {
     const rt = returnTypeFunc ? returnTypeFunc() : target
     Field(() => rt, { name: schemaName, nullable: true })(Aggregated.prototype, propertyName)
+    // Nest GraphQL 14 binds inherited @ResolveField handlers to the nearest concrete
+    // @Resolver() type (usually the DTO), so date `by` args must live on the ObjectType
+    // itself for TagAggregateGroupBy.fakeDate(by: MONTH) to validate.
+    if (target === Date) {
+      Args('by', {
+        type: () => GroupBy,
+        defaultValue: GroupBy.DAY
+      })(Aggregated.prototype, propertyName, 0)
+    }
   })
 
   return Aggregated

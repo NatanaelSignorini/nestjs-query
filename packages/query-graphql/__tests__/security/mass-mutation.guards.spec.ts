@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common'
 import {
   assertCreateManyBatchSize,
   assertMaxAffected,
+  assertMaxAffectedFromCount,
   assertNonEmptyClientFilter,
   resolveMassMutationSecurity
 } from '../../src/security'
@@ -54,6 +55,28 @@ describe('mass mutation security guards', () => {
 
     it('allows counts within maxAffected', () => {
       expect(() => assertMaxAffected(10, { massMutations: { maxAffected: 10 } })).not.toThrow()
+    })
+  })
+
+  describe('assertMaxAffectedFromCount', () => {
+    it('skips count when maxAffected is unset', async () => {
+      const count = jest.fn(async () => 10_000)
+      await expect(assertMaxAffectedFromCount(count)).resolves.toBeUndefined()
+      expect(count).not.toHaveBeenCalled()
+    })
+
+    it('counts and rejects when over maxAffected', async () => {
+      const count = jest.fn(async () => 11)
+      await expect(assertMaxAffectedFromCount(count, { massMutations: { maxAffected: 10 } })).rejects.toBeInstanceOf(
+        BadRequestException
+      )
+      expect(count).toHaveBeenCalledTimes(1)
+    })
+
+    it('counts and allows values within maxAffected', async () => {
+      const count = jest.fn(async () => 10)
+      await expect(assertMaxAffectedFromCount(count, { massMutations: { maxAffected: 10 } })).resolves.toBeUndefined()
+      expect(count).toHaveBeenCalledTimes(1)
     })
   })
 

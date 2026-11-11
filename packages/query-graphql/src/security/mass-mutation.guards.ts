@@ -59,5 +59,20 @@ export function assertMaxAffected(affectedCount: number, security?: NestjsQueryS
   }
 }
 
+/**
+ * Runs a count only when `maxAffected` is configured, so services that do not
+ * implement `count` (e.g. NoOpQueryService wrappers) keep working by default.
+ */
+export async function assertMaxAffectedFromCount(
+  count: () => Promise<number>,
+  security?: NestjsQuerySecurityOptions
+): Promise<void> {
+  const { maxAffected } = resolveMassMutationSecurity(security)
+  if (maxAffected === undefined) {
+    return
+  }
+  assertMaxAffected(await count(), security)
+}
+
 export const getSecurityOrDefault = (security?: NestjsQuerySecurityOptions): NestjsQuerySecurityOptions =>
   security ?? DEFAULT_SECURITY_OPTIONS
