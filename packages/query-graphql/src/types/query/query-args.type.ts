@@ -2,6 +2,7 @@ import { Class } from '@ptc-org/nestjs-query-core'
 
 import { removeUndefinedValues } from '../../common'
 import { getQueryOptions } from '../../decorators'
+import { assertPagingOptsAllowed, getEffectiveDefaultMaxResultsSize } from '../../security'
 import { PagingStrategies } from './paging'
 import {
   createCursorQueryArgsType,
@@ -19,6 +20,7 @@ const getMergedQueryOpts = <DTO>(DTOClass: Class<DTO>, opts?: QueryArgsTypeOpts<
   const decoratorOpts = getQueryOptions(DTOClass)
   return {
     ...DEFAULT_QUERY_OPTS,
+    maxResultsSize: getEffectiveDefaultMaxResultsSize(),
     pagingStrategy: PagingStrategies.CURSOR,
     ...removeUndefinedValues(decoratorOpts ?? {}),
     ...removeUndefinedValues(opts ?? {})
@@ -46,6 +48,8 @@ export function QueryArgsType<DTO>(DTOClass: Class<DTO>, opts?: QueryArgsTypeOpt
 export function QueryArgsType<DTO>(DTOClass: Class<DTO>, opts?: QueryArgsTypeOpts<DTO>): StaticQueryType<DTO, PagingStrategies> {
   // override any options from the DTO with the options passed in
   const mergedOpts = getMergedQueryOpts(DTOClass, opts)
+  assertPagingOptsAllowed(mergedOpts)
+
   if (mergedOpts.pagingStrategy === PagingStrategies.OFFSET) {
     return createOffsetQueryArgs(DTOClass, mergedOpts)
   }

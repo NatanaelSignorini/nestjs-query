@@ -6,6 +6,7 @@ import { AutoResolverOpts, createAuthorizerProviders, createHookProviders, creat
 import { ReadResolverOpts } from './resolvers'
 import {
   assertAuthorizersConfigured,
+  configurePagingSecurity,
   createAuthorizationSecurityValidator,
   NESTJS_QUERY_SECURITY_OPTIONS,
   NestjsQuerySecurityOptions,
@@ -47,9 +48,12 @@ export interface NestjsQueryGraphqlModuleFeatureOpts {
 @Module({})
 export class NestjsQueryGraphQLCoreModule {
   public static forRoot(opts: NestjsQueryGraphqlModuleRootOpts): DynamicModule {
+    const security = resolveSecurityOptions(opts.security)
+    configurePagingSecurity(opts.security)
+
     const providers = [
       { provide: dataLoaderOptionsToken, useValue: opts.dataLoader ?? {} },
-      { provide: NESTJS_QUERY_SECURITY_OPTIONS, useValue: resolveSecurityOptions(opts.security) }
+      { provide: NESTJS_QUERY_SECURITY_OPTIONS, useValue: security }
     ]
 
     return {
@@ -74,6 +78,11 @@ export class NestjsQueryGraphQLModule {
     // Fail early when the feature module itself requests required authorization.
     if (opts.security?.authorization === 'required') {
       assertAuthorizersConfigured(dtoClasses, 'required')
+    }
+
+    // Apply feature-level paging security overrides before resolvers build QueryArgs types.
+    if (opts.security?.paging) {
+      configurePagingSecurity(opts.security)
     }
 
     const coreModule = this.getCoreModule(opts)

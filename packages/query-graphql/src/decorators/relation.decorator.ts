@@ -60,7 +60,13 @@ const relationDecorator = <IsMany>(isMany: boolean, allowFiltering: boolean, pag
       reflector.append(DTOClass, {
         name,
         isMany,
-        relationOpts: { pagingStrategy, allowFiltering, ...options },
+        relationOpts: {
+          allowFiltering,
+          ...(pagingStrategy !== undefined ? { pagingStrategy } : {}),
+          // UnPagedRelation is an explicit unlimited opt-in for nested collections.
+          ...(pagingStrategy === PagingStrategies.NONE ? { allowUnlimited: true } : {}),
+          ...options
+        },
         relationTypeFunc
       })
       return DTOClass

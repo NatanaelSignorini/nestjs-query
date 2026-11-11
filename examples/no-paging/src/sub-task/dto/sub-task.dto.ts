@@ -4,7 +4,7 @@ import { FilterableField, PagingStrategies, QueryOptions, Relation } from '@ptc-
 import { TodoItemDTO } from '../../todo-item/dto/todo-item.dto'
 
 @ObjectType('SubTask')
-@QueryOptions({ pagingStrategy: PagingStrategies.NONE })
+@QueryOptions({ pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
 @Relation('todoItem', () => TodoItemDTO, {
   update: { enabled: true }
 })

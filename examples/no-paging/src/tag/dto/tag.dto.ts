@@ -4,7 +4,7 @@ import { FilterableField, PagingStrategies, QueryOptions, UnPagedRelation } from
 import { TodoItemDTO } from '../../todo-item/dto/todo-item.dto'
 
 @ObjectType('Tag')
-@QueryOptions({ pagingStrategy: PagingStrategies.NONE })
+@QueryOptions({ pagingStrategy: PagingStrategies.NONE, allowUnlimited: true })
 @UnPagedRelation('todoItems', () => TodoItemDTO, {
   update: { enabled: true },
   remove: { enabled: true }

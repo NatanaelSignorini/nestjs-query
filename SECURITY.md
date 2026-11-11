@@ -71,13 +71,39 @@ NestjsQueryGraphQLModule.forRoot({
 // delete: { many: { allowEmptyFilter: true } }
 ```
 
+## Paging caps (Phase 2.3)
+
+| Option | Default | Effect |
+|---|---|---|
+| `paging.maxResultsSize` | `100` | Default page cap for cursor/offset queries (and export) |
+| `paging.requireAllowUnlimitedForNone` | `true` | `pagingStrategy: NONE` needs `allowUnlimited: true` |
+| `paging.requireAllowUnlimitedForDisabledMax` | `true` | `maxResultsSize: -1` needs `allowUnlimited: true` |
+
+```ts
+NestjsQueryGraphQLModule.forRoot({
+  security: {
+    paging: {
+      maxResultsSize: 100,
+      requireAllowUnlimitedForNone: true,
+      requireAllowUnlimitedForDisabledMax: true
+    }
+  }
+})
+
+// Explicit unlimited root queries:
+// pagingStrategy: PagingStrategies.NONE, allowUnlimited: true
+// maxResultsSize: -1, allowUnlimited: true
+
+// @UnPagedRelation already sets allowUnlimited for nested collections.
+```
+
 ## Hardening roadmap
 
 This fork prioritizes:
 
 1. Authorization fail-closed defaults — **available** (`security.authorization`)
 2. Guards against empty `updateMany` / `deleteMany` filters — **available** (`security.massMutations`)
-3. Global max page / batch sizes — paging caps still pending (createMany batch cap is in 2.2)
+3. Global max page / batch sizes — **available** (`security.paging` + createMany `maxBatchSize`)
 4. GraphQL query complexity and filter depth limits
 5. TypeORM filter allowlisting and safe operators
 

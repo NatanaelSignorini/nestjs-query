@@ -93,11 +93,15 @@ describe('@UnPagedRelation', () => {
     class TestDTO {}
 
     const relations = getRelations(TestDTO)
-    expect(relations).toEqual({
-      many: {
-        tests: { DTO: TestRelation, ...relationOpts, allowFiltering: false, pagingStrategy: PagingStrategies.NONE }
-      }
-    })
+    expect(relations.many?.tests).toEqual(
+      expect.objectContaining({
+        DTO: TestRelation,
+        ...relationOpts,
+        allowFiltering: false,
+        pagingStrategy: PagingStrategies.NONE,
+        allowUnlimited: true
+      })
+    )
   })
 
   it('should add the deprecationReason to the options', () => {
@@ -114,11 +118,15 @@ describe('@UnPagedRelation', () => {
     const relations = getRelations(TestDTO)
 
     // Assert
-    expect(relations).toEqual({
-      many: {
-        tests: { DTO: TestRelation, ...relationOpts, allowFiltering: false, pagingStrategy: PagingStrategies.NONE }
-      }
-    })
+    expect(relations.many?.tests).toEqual(
+      expect.objectContaining({
+        DTO: TestRelation,
+        ...relationOpts,
+        allowFiltering: false,
+        pagingStrategy: PagingStrategies.NONE,
+        allowUnlimited: true
+      })
+    )
   })
 })
 
@@ -132,11 +140,15 @@ describe('@FilterableUnPagedRelation', () => {
     class TestDTO {}
 
     const relations = getRelations(TestDTO)
-    expect(relations).toEqual({
-      many: {
-        test: { DTO: TestRelation, pagingStrategy: PagingStrategies.NONE, ...relationOpts, allowFiltering: true }
-      }
-    })
+    expect(relations.many?.test).toEqual(
+      expect.objectContaining({
+        DTO: TestRelation,
+        pagingStrategy: PagingStrategies.NONE,
+        ...relationOpts,
+        allowFiltering: true,
+        allowUnlimited: true
+      })
+    )
   })
 
   it('should add the deprecationReason to the options', () => {
@@ -153,11 +165,15 @@ describe('@FilterableUnPagedRelation', () => {
     const relations = getRelations(TestDTO)
 
     // Assert
-    expect(relations).toEqual({
-      many: {
-        test: { DTO: TestRelation, pagingStrategy: PagingStrategies.NONE, ...relationOpts, allowFiltering: true }
-      }
-    })
+    expect(relations.many?.test).toEqual(
+      expect.objectContaining({
+        DTO: TestRelation,
+        pagingStrategy: PagingStrategies.NONE,
+        ...relationOpts,
+        allowFiltering: true,
+        allowUnlimited: true
+      })
+    )
   })
 })
 
@@ -348,7 +364,12 @@ describe('getRelations', () => {
         test: { DTO: SomeRelation, allowFiltering: false }
       },
       many: {
-        allTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.NONE },
+        allTests: {
+          DTO: SomeRelation,
+          allowFiltering: false,
+          pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true
+        },
         offsetTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.OFFSET },
         cursorTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.CURSOR }
       }
@@ -362,13 +383,19 @@ describe('getRelations', () => {
         implementedRelation: { DTO: SomeRelation, allowFiltering: false }
       },
       many: {
-        allTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.NONE },
+        allTests: {
+          DTO: SomeRelation,
+          allowFiltering: false,
+          pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true
+        },
         offsetTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.OFFSET },
         cursorTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.CURSOR },
         implementedAllRelations: {
           DTO: SomeRelation,
           allowFiltering: false,
-          pagingStrategy: PagingStrategies.NONE
+          pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true
         },
         implementedOffsetConnection: {
           DTO: SomeRelation,
@@ -391,13 +418,19 @@ describe('getRelations', () => {
         implementedRelation: { DTO: SomeRelation, allowFiltering: false, relationName: 'test' }
       },
       many: {
-        allTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.NONE },
+        allTests: {
+          DTO: SomeRelation,
+          allowFiltering: false,
+          pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true
+        },
         offsetTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.OFFSET },
         cursorTests: { DTO: SomeRelation, allowFiltering: false, pagingStrategy: PagingStrategies.CURSOR },
         implementedAllRelations: {
           DTO: SomeRelation,
           allowFiltering: false,
           pagingStrategy: PagingStrategies.NONE,
+          allowUnlimited: true,
           relationName: 'tests'
         },
         implementedOffsetConnection: {
