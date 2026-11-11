@@ -12,12 +12,16 @@ export type BaseQueryArgsTypeOpts<DTO> = {
   defaultResultSize?: number
   /**
    * The maximum number of results that can be returned from a query.
-   * [Default=50]
+   * [Default=100]
    *
    * If `-1` it means there is no limit to the number of results that can be
-   * returned.
+   * returned. That requires `allowUnlimited: true` when paging security is enabled.
    */
   maxResultsSize?: number
+  /**
+   * Explicit opt-in for unlimited result sets (`pagingStrategy: NONE` or `maxResultsSize: -1`).
+   */
+  allowUnlimited?: boolean
   /**
    * The default sort for queries.
    * [Default=[]]

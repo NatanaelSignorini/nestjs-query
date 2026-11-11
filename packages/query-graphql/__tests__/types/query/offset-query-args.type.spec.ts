@@ -195,7 +195,7 @@ describe('Offset paging strategy QueryArgsType with manual options', (): void =>
     it('should ignore a maxResultsSize for paging.limit if maxResultSize === -1', () => {
       class NoMaxQueryArgsTpe extends QueryArgsType(TestDto, {
         pagingStrategy: PagingStrategies.OFFSET,
-        maxResultsSize: -1
+        maxResultsSize: -1, allowUnlimited: true
       }) {}
 
       const queryObj: NoMaxQueryArgsTpe = {

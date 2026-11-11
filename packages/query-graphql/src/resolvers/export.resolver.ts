@@ -126,8 +126,8 @@ export const Exportable =
       QueryArgs = QueryArgsType(DTOClass, {
         ...opts,
         pagingStrategy: PagingStrategies.OFFSET,
-        defaultResultSize: opts.limit ?? 1000,
-        maxResultsSize: opts.limit ?? 1000
+        defaultResultSize: opts.limit ?? 100,
+        maxResultsSize: opts.limit ?? 100
       })
     } = opts
 

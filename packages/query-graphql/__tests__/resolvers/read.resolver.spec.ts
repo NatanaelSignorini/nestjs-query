@@ -270,7 +270,7 @@ describe('ReadResolver', () => {
 
     describe('#queryMany no paging connection', () => {
       @Resolver(() => TestResolverDTO)
-      class TestResolver extends ReadResolver(TestResolverDTO, { pagingStrategy: PagingStrategies.NONE }) {
+      class TestResolver extends ReadResolver(TestResolverDTO, { pagingStrategy: PagingStrategies.NONE, allowUnlimited: true }) {
         constructor(service: TestService) {
           super(service)
         }
