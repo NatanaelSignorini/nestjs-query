@@ -25,6 +25,7 @@ import { SubTaskEntity } from './sub-task.entity'
         {
           DTOClass: SubTaskDTO,
           EntityClass: SubTaskEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },
@@ -38,6 +39,7 @@ import { SubTaskEntity } from './sub-task.entity'
         {
           DTOClass: SubTaskDTO,
           EntityClass: SubTaskEntity,
+          enableRelations: false,
           create: { disabled: true },
           update: { disabled: true },
           delete: { disabled: true },

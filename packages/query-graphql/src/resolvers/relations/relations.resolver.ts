@@ -13,6 +13,12 @@ import { UpdateRelationsMixin } from './update-relations.resolver'
 export interface RelatableOpts extends BaseResolverOptions {
   enableTotalCount?: boolean
   enableAggregate?: boolean
+  /**
+   * When false, skip relation/reference field resolvers on this AutoResolver.
+   * Needed when multiple CRUD resolvers share one DTOClass (e.g. alternate paging
+   * roots): Nest GraphQL 14 rejects duplicate field resolvers that do not override.
+   */
+  enableRelations?: boolean
 }
 
 export const Relatable =
@@ -21,6 +27,9 @@ export const Relatable =
     opts: RelatableOpts = {}
   ) =>
   <B extends Class<ServiceResolver<DTO, QS>>>(Base: B): B => {
+    if (opts.enableRelations === false) {
+      return Base
+    }
     const { enableTotalCount, enableAggregate } = opts
     const relations = getRelations(DTOClass, opts)
     const references = getReferences(DTOClass, opts)
