@@ -13,5 +13,12 @@ export const mergeBaseResolverOpts = <Into extends BaseResolverOptions>(into: In
   const pipes = mergeArrays(from.pipes, into.pipes)
   const filters = mergeArrays(from.filters, into.filters)
   const decorators = mergeArrays(from.decorators, into.decorators)
-  return { ...into, guards, interceptors, pipes, filters, decorators }
+  return {
+    ...into,
+    ...(guards !== undefined ? { guards } : {}),
+    ...(interceptors !== undefined ? { interceptors } : {}),
+    ...(pipes !== undefined ? { pipes } : {}),
+    ...(filters !== undefined ? { filters } : {}),
+    ...(decorators !== undefined ? { decorators } : {})
+  }
 }

@@ -27,6 +27,7 @@ export {
   getFilterFields,
   getFilterOmitting,
   invertSort,
+  isEmptyFilter,
   mergeFilter,
   mergeFilters,
   mergeQuery,

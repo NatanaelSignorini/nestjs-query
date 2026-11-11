@@ -114,7 +114,7 @@ describe('ExportResolver', () => {
 
     expect(schema).toContain('exportTestResolverDTOS(')
     expect(schema).toContain('fields: [ExportTestResolverDTOField!]!')
-    expect(schema).toContain('paging: OffsetPaging! = {limit: 1000}')
+    expect(schema).toContain('paging: OffsetPaging! = {limit: 100}')
     expect(schema).toContain('): String!')
   })
 
@@ -191,7 +191,7 @@ describe('ExportResolver', () => {
   })
 
   it.each([undefined, 25])('applies the GraphQL paging default for export limit %s', async (limit) => {
-    const maxRecords = limit ?? 1000
+    const maxRecords = limit ?? 100
     const items = Array.from({ length: maxRecords }, (_, id) => ({ id: String(id), stringField: 'test' }))
     const service = mock<QueryService<TestResolverDTO>>()
     when(service.exportMany(anything(), anything())).thenResolve(items)
@@ -216,7 +216,7 @@ describe('ExportResolver', () => {
     { maximum: undefined, paging: { limit: 10 } },
     { maximum: 25, paging: { limit: 10, offset: 20 } },
     { maximum: 25, paging: { limit: 25, offset: 50 } },
-    { maximum: undefined, paging: { limit: 1000, offset: 100 } }
+    { maximum: undefined, paging: { limit: 100, offset: 100 } }
   ])('passes requested export paging to the service %j', async ({ maximum, paging }) => {
     const service = mock<QueryService<TestResolverDTO>>()
     when(service.exportMany(anything(), anything())).thenResolve([])
@@ -232,7 +232,7 @@ describe('ExportResolver', () => {
     const [QueryArgs] = Reflect.getMetadata('design:paramtypes', ResolverClass.prototype, 'exportMany') as [
       Class<ServiceQuery<TestResolverDTO>>
     ]
-    const maximum = limit ?? 1000
+    const maximum = limit ?? 100
 
     expect(validateSync(plainToInstance(QueryArgs, { paging: { limit: maximum, offset: 0 } }))).toHaveLength(0)
     expect(validateSync(plainToInstance(QueryArgs, { paging: { limit: maximum + 1, offset: 0 } }))).toEqual([

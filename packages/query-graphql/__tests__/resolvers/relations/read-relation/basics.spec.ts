@@ -469,8 +469,8 @@ describe('ReadRelationsResolver - basics', () => {
       class TestResolver extends ReadRelationsResolver(TestResolverDTO, {
         one: { relation: { DTO: TestRelationDTO }, custom: { DTO: TestRelationDTO, relationName: 'other' } },
         many: {
-          relations: { DTO: TestRelationDTO, pagingStrategy: PagingStrategies.NONE },
-          customs: { DTO: TestRelationDTO, pagingStrategy: PagingStrategies.NONE, relationName: 'others' }
+          relations: { DTO: TestRelationDTO, pagingStrategy: PagingStrategies.NONE, allowUnlimited: true },
+          customs: { DTO: TestRelationDTO, pagingStrategy: PagingStrategies.NONE, allowUnlimited: true, relationName: 'others' }
         }
       }) {
         constructor(service: TestService) {

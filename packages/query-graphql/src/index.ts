@@ -59,10 +59,17 @@ export { AutoResolverOpts } from './providers'
 export * from './resolvers'
 export {
   AuthorizationMode,
+  configurePagingSecurity,
+  DEFAULT_MASS_MUTATION_SECURITY_OPTIONS,
+  DEFAULT_PAGING_SECURITY_OPTIONS,
   DEFAULT_SECURITY_OPTIONS,
+  MassMutationSecurityOptions,
   MissingAuthorizerError,
   NESTJS_QUERY_SECURITY_OPTIONS,
-  NestjsQuerySecurityOptions
+  NestjsQuerySecurityOptions,
+  PagingSecurityOptions,
+  resetPagingSecurityForTests,
+  UnlimitedPagingError
 } from './security'
 export { GraphQLPubSub, pubSubToken } from './subscription'
 export * from './types'

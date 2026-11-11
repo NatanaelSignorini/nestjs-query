@@ -37,6 +37,11 @@ export interface CRUDResolverOpts<
   AggregateDTOClass?: Class<DTO>
   enableSubscriptions?: boolean
   pagingStrategy?: PS
+  /**
+   * Required when `pagingStrategy` is `NONE` or `maxResultsSize` is `-1` under paging security defaults.
+   */
+  allowUnlimited?: boolean
+  maxResultsSize?: number
   enableAggregate?: boolean
   create?: CreateResolverOpts<DTO, C>
   read?: R
@@ -86,8 +91,11 @@ function extractCreateResolverOpts<DTO, C>(
 function extractReadResolverOpts<DTO, R extends ReadResolverOpts<DTO>, PS extends PagingStrategies>(
   opts: CRUDResolverOpts<DTO, unknown, unknown, R, PagingStrategies, unknown>
 ): MergePagingStrategyOpts<DTO, R, PS> {
-  const { enableTotalCount, pagingStrategy, read } = opts
-  return mergeBaseResolverOpts({ enableTotalCount, pagingStrategy, ...read } as MergePagingStrategyOpts<DTO, R, PS>, opts)
+  const { enableTotalCount, pagingStrategy, allowUnlimited, maxResultsSize, read } = opts
+  return mergeBaseResolverOpts(
+    { enableTotalCount, pagingStrategy, allowUnlimited, maxResultsSize, ...read } as MergePagingStrategyOpts<DTO, R, PS>,
+    opts
+  )
 }
 
 function extractUpdateResolverOpts<DTO, U>(

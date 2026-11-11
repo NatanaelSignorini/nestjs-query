@@ -205,7 +205,7 @@ describe('Cursor paging strategy QueryArgsType with manual options', (): void =>
     })
 
     it('should ignore a maxResultsSize for paging.first and paging.last if maxResultSize === -1', () => {
-      class NoMaxQueryArgsTpe extends QueryArgsType(TestDto, { maxResultsSize: -1 }) {}
+      class NoMaxQueryArgsTpe extends QueryArgsType(TestDto, { maxResultsSize: -1, allowUnlimited: true }) {}
 
       const queryObjFirst: NoMaxQueryArgsTpe = {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment

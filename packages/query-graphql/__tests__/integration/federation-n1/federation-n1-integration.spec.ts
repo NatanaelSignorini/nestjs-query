@@ -72,14 +72,14 @@ describe('Federation N+1 Integration Test (Based on User Demo)', () => {
             {
               EntityClass: TodoList,
               DTOClass: TodoListDto,
-              pagingStrategy: PagingStrategies.NONE,
+              pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
               // Test ReferenceResolver with referenceBy configuration
               referenceBy: { key: 'id' }
             },
             {
               EntityClass: TodoItem,
               DTOClass: TodoItemDto,
-              pagingStrategy: PagingStrategies.NONE,
+              pagingStrategy: PagingStrategies.NONE, allowUnlimited: true,
               // Test ReferenceResolver with referenceBy configuration
               referenceBy: { key: 'id' }
             }
