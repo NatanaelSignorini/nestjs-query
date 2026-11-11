@@ -10,7 +10,7 @@ Human contributor setup and PR etiquette also live in [CONTRIBUTING.md](CONTRIBU
 - **This fork:** [NatanaelSignorini/nestjs-query](https://github.com/NatanaelSignorini/nestjs-query), NestJS **12** / `@nestjs/graphql` **14**, public Free-plan hardening.
 - **Upstream lineage:** TriPSs/nestjs-query (from doug-martin/nestjs-query). Keep LICENSE and NOTICE with MIT attribution.
 - **Default branch:** `dev` (integration). **`main` is production.**
-- **Node:** `>=20.19.0 || >=22.12.0` (CI uses Node 24; full `ci` also runs 26). Nest 12 ESM Jest needs Node 24.9+.
+- **Node:** `>=20.19.0 || >=22.12.0` (CI uses Node 24; full `ci (main)` also runs 26). Nest 12 ESM Jest needs Node 24.9+.
 
 ## AI playbooks (detail)
 
@@ -29,10 +29,10 @@ These files are **not** registered in Mintlify `docs/docs.json`. They are for ag
 ## Branch flow (summary)
 
 - Open feature and chore PRs against **`dev`**.
-- PRs/pushes to `dev` run workflow **`CI Dev`** and must pass required check **`ci-dev`** (Node 24: lint + build + unit test). No e2e or federation on that gate.
-- After a successful **push** of **`CI Dev`** on `dev`, **Promote dev to main** opens or refreshes a PR `dev` → `main` with auto-merge.
-- That promote PR runs workflow **`CI`** (main-only) and must pass required check **`ci`** (Node 24/26 matrix, e2e postgres/mysql, federation) before merging into `main`.
-- **`CI` and `CI Dev` are separate workflow files** so push-to-`dev` never posts a skipped check named `ci` on the same SHA (that allowed a false promote merge).
+- PRs/pushes to `dev` run workflow **`CI (dev)`** and must pass required check **`ci (dev)`** (Node 24: lint + build + unit test). No e2e or federation on that gate.
+- After a successful **push** of **`CI (dev)`** on `dev`, **Promote dev to main** opens or refreshes a PR `dev` → `main` with auto-merge.
+- That promote PR runs workflow **`CI (main)`** and must pass required check **`ci (main)`** (Node 24/26 matrix, e2e postgres/mysql, federation) before merging into `main`.
+- **`CI (main)` and `CI (dev)` are separate workflow files** so push-to-`dev` never posts a skipped check named `ci (main)` on the same SHA (that allowed a false promote merge).
 - Do not open feature PRs directly to `main` unless you are changing promote/CI wiring itself.
 
 Details: [docs/ai/branch-and-ci.md](docs/ai/branch-and-ci.md).
@@ -90,7 +90,7 @@ After dependency bumps, run Prettier if the Prettier major/minor changed, and ke
 - `docs`: Mintlify user documentation (`docs.json` navigation).
 - `docs/ai`: agent/maintainer playbooks (this fork’s operating manual).
 - `tools`: shared tooling and custom ESLint rules.
-- `.github/workflows`: `ci-dev.yml` (light gate), `ci.yml` (full gate + `workflow_dispatch`), `promote-dev.yml`, CodeQL, publish/release (`workflow_dispatch` only).
+- `.github/workflows`: `ci-dev.yml` (`CI (dev)`), `ci.yml` (`CI (main)` + `workflow_dispatch`), `promote-dev.yml`, `codeql-analysis.yml` (`Code scanning`), publish/release (`workflow_dispatch` only).
 
 ## Hard constraints for agents
 

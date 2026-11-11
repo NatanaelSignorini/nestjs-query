@@ -1,5 +1,5 @@
 # CodeQL security analysis for TypeScript/JavaScript.
-name: "CodeQL"
+name: "Code scanning"
 
 on:
   push:

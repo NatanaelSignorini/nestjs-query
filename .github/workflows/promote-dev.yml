@@ -1,15 +1,15 @@
 name: Promote dev to main
 
-# After light CI Dev succeeds on a push to `dev`, open/update a PR to `main`
-# and enable auto-merge. Branch protection on `main` still requires the full `ci` check
-# from workflow `CI` (which only runs for main/master PRs and pushes).
+# After light CI (dev) succeeds on a push to `dev`, open/update a PR to `main`
+# and enable auto-merge. Branch protection on `main` still requires the full
+# `ci (main)` check from workflow `CI (main)`.
 #
 # Use secrets.PROMOTE_TOKEN (classic PAT or fine-grained with contents+PR on this repo)
-# so the PR is authored by a human user and CI/CodeQL run without "Approve and run".
+# so the PR is authored by a human user and CI/Code scanning run without "Approve and run".
 # GITHUB_TOKEN PRs from github-actions[bot] stay stuck in action_required until approved.
 on:
   workflow_run:
-    workflows: [CI Dev]
+    workflows: ['CI (dev)']
     types: [completed]
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
 
           if [ -z "${{ secrets.PROMOTE_TOKEN }}" ]; then
-            echo "::warning::PROMOTE_TOKEN is not set; using GITHUB_TOKEN. Promote PRs may require manual Approve and run for CI/CodeQL."
+            echo "::warning::PROMOTE_TOKEN is not set; using GITHUB_TOKEN. Promote PRs may require manual Approve and run for CI / Code scanning."
           fi
 
           existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // empty')"
@@ -41,11 +41,11 @@ jobs:
               --base main \
               --head dev \
               --title "chore: promote dev to main" \
-              --body "Automated promote from \`dev\` after light CI (\`CI Dev\` / \`ci-dev\`) passed.
+              --body "Automated promote from \`dev\` after light CI (\`CI (dev)\` / \`ci (dev)\`) passed.
 
-          Full CI (\`CI\` / \`ci\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
+          Full CI (\`CI (main)\` / \`ci (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`.
 
-          Note: \`CI\` and \`CI Dev\` are separate workflows so push-to-dev never posts a skipped check named \`ci\` on the same SHA."
+          Note: \`CI (main)\` and \`CI (dev)\` are separate workflows so push-to-dev never posts a skipped check named \`ci (main)\` on the same SHA."
             existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
           fi
 

@@ -1,4 +1,4 @@
-name: CI
+name: CI (main)
 
 # Full gate for production (`main` / `master` / `releases/*`) only.
 # Keep this workflow off `dev` so push-to-dev never posts a skipped check named `ci`.
@@ -149,7 +149,7 @@ jobs:
 
   # Single required status check for `main` branch protection.
   ci:
-    name: ci
+    name: ci (main)
     needs: [check, e2e-test, federation-e2e-test]
     if: always()
     runs-on: ubuntu-latest
@@ -159,6 +159,22 @@ jobs:
           echo "check=${{ needs.check.result }}"
           echo "e2e-test=${{ needs.e2e-test.result }}"
           echo "federation-e2e-test=${{ needs.federation-e2e-test.result }}"
+          if [ "${{ needs.check.result }}" != "success" ] \
+            || [ "${{ needs.e2e-test.result }}" != "success" ] \
+            || [ "${{ needs.federation-e2e-test.result }}" != "success" ]; then
+            echo "One or more required pipeline jobs failed or were skipped"
+            exit 1
+          fi
+
+  # Temporary alias while branch protection still lists `ci`. Remove after protection PATCH.
+  ci-legacy:
+    name: ci
+    needs: [check, e2e-test, federation-e2e-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs (legacy check name)
+        run: |
           if [ "${{ needs.check.result }}" != "success" ] \
             || [ "${{ needs.e2e-test.result }}" != "success" ] \
             || [ "${{ needs.federation-e2e-test.result }}" != "success" ]; then
