@@ -1,4 +1,4 @@
-name: CI Dev
+name: CI (dev)
 
 # Light gate for `dev` only. Must NOT emit a check named `ci` (skipped or otherwise),
 # or promote PRs to `main` can auto-merge on a skipped required check from the same SHA.
@@ -73,7 +73,7 @@ jobs:
 
   # Required status check name for `dev` branch protection.
   ci-dev:
-    name: ci-dev
+    name: ci (dev)
     needs: [check-dev]
     if: always()
     runs-on: ubuntu-latest
@@ -81,6 +81,20 @@ jobs:
       - name: Verify light pipeline
         run: |
           echo "check-dev=${{ needs.check-dev.result }}"
+          if [ "${{ needs.check-dev.result }}" != "success" ]; then
+            echo "Light pipeline failed or was skipped"
+            exit 1
+          fi
+
+  # Temporary alias while branch protection still lists `ci-dev`. Remove after protection PATCH.
+  ci-dev-legacy:
+    name: ci-dev
+    needs: [check-dev]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify light pipeline (legacy check name)
+        run: |
           if [ "${{ needs.check-dev.result }}" != "success" ]; then
             echo "Light pipeline failed or was skipped"
             exit 1
