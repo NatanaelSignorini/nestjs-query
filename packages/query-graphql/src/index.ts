@@ -57,5 +57,12 @@ export { AuthorizerContext, AuthorizerInterceptor, HookContext, HookInterceptor 
 export { NestjsQueryGraphQLModule } from './module'
 export { AutoResolverOpts } from './providers'
 export * from './resolvers'
+export {
+  AuthorizationMode,
+  DEFAULT_SECURITY_OPTIONS,
+  MissingAuthorizerError,
+  NESTJS_QUERY_SECURITY_OPTIONS,
+  NestjsQuerySecurityOptions
+} from './security'
 export { GraphQLPubSub, pubSubToken } from './subscription'
 export * from './types'
