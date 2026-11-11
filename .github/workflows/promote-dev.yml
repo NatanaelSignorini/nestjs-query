@@ -1,0 +1,42 @@
+name: Promote dev to main
+
+# After the light CI succeeds on a push to `dev`, open/update a PR to `main`
+# and enable auto-merge. Branch protection on `main` still requires the full `ci` check.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or refresh promote PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing" ]; then
+            gh pr create \
+              --base main \
+              --head dev \
+              --title "chore: promote dev to main" \
+              --body "Automated promote from \`dev\` after light CI (\`ci-dev\`) passed.
+
+          Full CI (\`ci\`: lint/build/test matrix, e2e, federation) must pass on this PR before auto-merge into \`main\`."
+            existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
+          fi
+
+          echo "Promote PR #$existing"
+          gh pr merge "$existing" --auto --merge
