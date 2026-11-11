@@ -28,16 +28,30 @@ function AggregateGroupByType<DTO>(name: string, fields: FilterableFieldDescript
 
   fields.forEach(({ propertyName, schemaName, target, returnTypeFunc }) => {
     const rt = returnTypeFunc ? returnTypeFunc() : target
-    Field(() => rt, { name: schemaName, nullable: true })(Aggregated.prototype, propertyName)
+
     // Nest GraphQL 14 binds inherited @ResolveField handlers to the nearest concrete
-    // @Resolver() type (usually the DTO), so date `by` args must live on the ObjectType
-    // itself for TagAggregateGroupBy.fakeDate(by: MONTH) to validate.
+    // @Resolver() type (usually the DTO), so date `by` args must be declared on the
+    // ObjectType itself. Use a method field so Args metadata attaches as methodArgs.
     if (target === Date) {
+      const methodKey = `${String(propertyName)}GroupBy`
+      const descriptor: PropertyDescriptor = {
+        value: function aggregateGroupByDateField(_by?: GroupBy) {
+          return (this as Record<string | symbol, unknown>)[propertyName]
+        },
+        enumerable: true,
+        configurable: true,
+        writable: true
+      }
+      Object.defineProperty(Aggregated.prototype, methodKey, descriptor)
+      Field(() => rt, { name: schemaName, nullable: true })(Aggregated.prototype, methodKey, descriptor)
       Args('by', {
         type: () => GroupBy,
         defaultValue: GroupBy.DAY
-      })(Aggregated.prototype, propertyName, 0)
+      })(Aggregated.prototype, methodKey, 0)
+      return
     }
+
+    Field(() => rt, { name: schemaName, nullable: true })(Aggregated.prototype, propertyName)
   })
 
   return Aggregated

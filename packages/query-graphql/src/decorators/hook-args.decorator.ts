@@ -19,13 +19,13 @@ import { MutationArgsType } from '../types'
  */
 const GQL_ARGS_PARAM_TYPE = 3
 
-// Soften forbidUnknownValues: nested GraphQL CreateDTO trees are often plain
-// objects until class-transformer runs; strict mode rejects them with
-// "an unknown value was passed to the validate function".
+// GraphQL CreateDTO trees are often plain objects with only `@Field()` metadata.
+// Whitelist/forbidNonWhitelisted would strip or reject those properties; GraphQL
+// already enforces the schema shape, and class-validator still runs `@Is*` rules.
 const ARGS_VALIDATION_PIPE = new ValidationPipe({
   transform: true,
-  whitelist: true,
-  forbidNonWhitelisted: true,
+  whitelist: false,
+  forbidNonWhitelisted: false,
   skipMissingProperties: false,
   forbidUnknownValues: false
 })
