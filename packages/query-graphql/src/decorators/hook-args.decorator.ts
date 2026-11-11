@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
+import { BadRequestException, createParamDecorator, ExecutionContext, ValidationPipe } from '@nestjs/common'
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants'
 import { Args, GqlExecutionContext } from '@nestjs/graphql'
 import { Class } from '@ptc-org/nestjs-query-core'
@@ -13,14 +13,43 @@ import { MutationArgsType } from '../types'
  * Combined with `createParamDecorator` on the same parameter index that creates
  * two extractors; Nest resolves them with `Promise.all` and the last write wins.
  * On Nest 12 / GraphQL 14 the raw `@Args()` value often wins, so hooks never apply.
+ *
+ * Dropping the ARGS extractor also drops the path that carried global ValidationPipe
+ * for GraphQL args, so hooked mutations must validate explicitly before running hooks.
  */
 const GQL_ARGS_PARAM_TYPE = 3
+
+const ARGS_VALIDATION_PIPE = new ValidationPipe({
+  transform: true,
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  skipMissingProperties: false,
+  forbidUnknownValues: true
+})
 
 function transformValue<T>(value: T, type?: Class<T>): T {
   if (type && !(value instanceof type)) {
     return plainToInstance<T, unknown>(type, value)
   }
   return value
+}
+
+async function validateArgs<T>(value: T, type?: Class<T>): Promise<T> {
+  const instance = transformValue(value, type)
+  if (!type) {
+    return instance
+  }
+  try {
+    return (await ARGS_VALIDATION_PIPE.transform(instance, {
+      type: 'body',
+      metatype: type
+    })) as T
+  } catch (err) {
+    if (err instanceof BadRequestException) {
+      throw err
+    }
+    throw new BadRequestException(err)
+  }
 }
 
 function removeGqlArgsPipesMetadata(target: object, methodName: string | symbol, paramIndex: number): void {
@@ -56,7 +85,8 @@ function createArgsDecorator<T, C = unknown>(fn: (arg: T, context: C) => T | Pro
       const gqlExecutionContext = GqlExecutionContext.create(executionContext)
       const gqlContext = gqlExecutionContext.getContext<C>()
       const args = gqlExecutionContext.getArgs<T>()
-      return fn(transformValue(args, ArgType), gqlContext)
+      const validated = await validateArgs(args, ArgType)
+      return fn(validated, gqlContext)
     })()(target, methodName, paramIndex)
   }
 }

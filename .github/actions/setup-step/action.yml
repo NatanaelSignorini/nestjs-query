@@ -23,3 +23,11 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: yarn install --immutable
+
+    # enableScripts is false (Windows-friendly); unit tests need native bindings for
+    # better-sqlite3 / sqlite3. Rebuild for this Node ABI after install or cache restore.
+    - name: Rebuild native modules
+      shell: bash
+      run: |
+        npm rebuild better-sqlite3
+        if [ -d node_modules/sqlite3 ]; then npm rebuild sqlite3; fi
