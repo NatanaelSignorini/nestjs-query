@@ -24,10 +24,11 @@ Active definitions live under `.github/workflows/`. **Light and full gates are s
   - Triggers: `push` / `pull_request` to **`main` / `master` / `releases/*`**, plus `workflow_dispatch`.
   - Jobs: `setup` → `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`check (main)`**.
   - Concurrency: `ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
-- **`promote-dev.yml`** — on `workflow_run` of **`CI (dev)`** completed with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full **`check (main)`** from workflow `CI (main)` on that PR gates merge into `main`.
-  - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`. Without that, promote fails with `GitHub Actions is not permitted to create or approve pull requests`.
+- **`promote-dev.yml`** — **`workflow_dispatch` only** (Actions → **Promote dev to main** → Run workflow). Creates/refreshes PR `dev` → `main` and enables auto-merge. Full **`check (main)`** from workflow `CI (main)` on that PR must pass; then GitHub merges into `main`.
+  - Not tied to `CI (dev)` completions — avoids duplicate/skipped Promote runs and spam while fixing work on `dev`.
+  - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`.
   - Set Actions secret **`PROMOTE_TOKEN`** to a maintainer PAT (repo `contents` + `pull_requests`). Promote uses it instead of `GITHUB_TOKEN` so the PR is not opened as `github-actions[bot]`. Bot-authored PRs leave CI / Code scanning in **`action_required`** until someone clicks **Approve and run workflows** (or `POST .../actions/runs/{id}/approve`).
-  - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first, then re-promote.
+  - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first, then run promote again.
 - **`codeql-analysis.yml`** — name **`Code scanning`** (GitHub CodeQL engine). Runs on `main` / `master` / `dev`.
 - **Publish / release** — `workflow_dispatch` only (see [publishing.md](publishing.md)).
 - Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing these workflows.
@@ -58,8 +59,8 @@ GitHub associates check runs with the **commit SHA**. When light and full gates 
 1. Branch from `dev`.
 2. Implement + unit tests; run smallest `yarn nx lint|test|build <project>`.
 3. Open PR → `dev`; wait for **`check (dev)`**.
-4. Merge when green. Push to `dev` triggers promote when light CI succeeds.
-5. Watch the promote PR on `main` for full **`check (main)`** (e2e/federation). Fix on a follow-up PR into `dev` if promote fails; do not bypass `main` protection casually.
+4. Merge when green. Keep iterating on `dev` until ready for production.
+5. When ready: Actions → **Promote dev to main** → Run workflow. Watch the promote PR for full **`check (main)`** (e2e/federation); auto-merge lands on `main` when green. Fix on a follow-up PR into `dev` if promote CI fails; do not bypass `main` protection casually.
 
 ## Stuck Actions / ghost runs
 
