@@ -4,6 +4,14 @@
 
 `nestjs-query` is a TypeScript monorepo for NestJS query libraries. It uses Yarn 4 workspaces and Nx. Reusable libraries live in `packages/`; runnable and end-to-end examples live in `examples/`; the Mintlify documentation site lives in `docs/`.
 
+## Branch flow
+
+- Default integration branch is **`dev`**. Open feature PRs against `dev`.
+- PRs / pushes to `dev` run the light gate **`ci-dev`** (Node 24 lint + build + unit test). No e2e or federation.
+- After light CI passes on a push to `dev`, the **Promote dev to main** workflow opens or refreshes a PR `dev` → `main` with auto-merge.
+- That promote PR runs the full gate **`ci`** (Node 24/26 matrix, e2e postgres/mysql, federation). Auto-merge into `main` waits for `ci` to succeed.
+- Do not open feature PRs directly to `main` unless you are changing the promote/CI wiring itself.
+
 ## Working conventions
 
 - Use Yarn, not npm, for dependency and Nx commands: `yarn nx <target> <project>`.
