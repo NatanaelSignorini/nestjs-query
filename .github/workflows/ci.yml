@@ -1,17 +1,18 @@
 name: CI
 
+# Full gate for production (`main` / `master` / `releases/*`) only.
+# Keep this workflow off `dev` so push-to-dev never posts a skipped check named `ci`.
 on:
   push:
     branches:
       - main
       - master
-      - dev
       - releases/*
   pull_request:
     branches:
       - main
       - master
-      - dev
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,89 +26,10 @@ env:
   NX_RUN_GROUP: ${{ github.run_id }}
 
 jobs:
-
   setup:
     uses: ./.github/workflows/shared.setup-env.yml
 
-  # --- Light gate for `dev` (lint + build + unit test, Node 24 only) ---
-
-  check-dev:
-    if: >
-      (github.event_name == 'pull_request' && github.base_ref == 'dev') ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/dev')
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [24.x]
-        target: ['build', 'test', 'lint']
-    steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v7
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: ./.github/actions/setup-step
-
-      - name: GIT config
-        if: matrix.target == 'build'
-        run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-
-      - name: nx workspace:version
-        if: matrix.target == 'build'
-        run: yarn nx run workspace:version
-
-      - name: Clean dist outputs
-        if: matrix.target == 'build'
-        run: rm -rf dist
-
-      - name: nx affected:${{ matrix.target }}
-        run: |
-          if [ "${{ matrix.target }}" = "build" ]; then
-            yarn nx run-many --target=build --all --parallel=1 \
-              || (rm -rf dist && yarn nx run-many --target=build --all --parallel=1)
-          else
-            yarn nx run-many --target=${{ matrix.target }} --all
-          fi
-        env:
-          NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
-
-  ci-dev:
-    name: ci-dev
-    needs: [check-dev]
-    if: >
-      always() && (
-        (github.event_name == 'pull_request' && github.base_ref == 'dev') ||
-        (github.event_name == 'push' && github.ref == 'refs/heads/dev')
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify light pipeline
-        run: |
-          echo "check-dev=${{ needs.check-dev.result }}"
-          if [ "${{ needs.check-dev.result }}" != "success" ]; then
-            echo "Light pipeline failed or was skipped"
-            exit 1
-          fi
-
-  # --- Full gate for `main` (matrix + e2e + federation) ---
-
   check:
-    if: >
-      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master')) ||
-      (github.event_name == 'push' && (
-        github.ref == 'refs/heads/main' ||
-        github.ref == 'refs/heads/master' ||
-        startsWith(github.ref, 'refs/heads/releases/')
-      ))
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -166,13 +88,6 @@ jobs:
           name: run-unit-test-${{ matrix.node-version }}
 
   e2e-test:
-    if: >
-      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master')) ||
-      (github.event_name == 'push' && (
-        github.ref == 'refs/heads/main' ||
-        github.ref == 'refs/heads/master' ||
-        startsWith(github.ref, 'refs/heads/releases/')
-      ))
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -212,13 +127,6 @@ jobs:
           name: run-e2e-${{ matrix.node-version }}-${{ matrix.db-type }}
 
   federation-e2e-test:
-    if: >
-      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master')) ||
-      (github.event_name == 'push' && (
-        github.ref == 'refs/heads/main' ||
-        github.ref == 'refs/heads/master' ||
-        startsWith(github.ref, 'refs/heads/releases/')
-      ))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -243,15 +151,7 @@ jobs:
   ci:
     name: ci
     needs: [check, e2e-test, federation-e2e-test]
-    if: >
-      always() && (
-        (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master')) ||
-        (github.event_name == 'push' && (
-          github.ref == 'refs/heads/main' ||
-          github.ref == 'refs/heads/master' ||
-          startsWith(github.ref, 'refs/heads/releases/')
-        ))
-      )
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs
