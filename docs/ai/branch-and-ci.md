@@ -20,6 +20,7 @@ Active definitions live under `.github/workflows/`:
   - **Light path (`dev`):** jobs `setup` → `check-dev` (Node `24.x` × `build` / `test` / `lint`) → aggregator **`ci-dev`**.
   - **Full path (`main` / `master` / `releases/*`):** `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`ci`**.
 - **`promote-dev.yml`** — on `workflow_run` of `CI` **completed** with `conclusion == success`, event `push`, branch `dev`: create/refresh PR `dev` → `main` and enable auto-merge. Full `ci` on that PR still gates merge into `main`.
+  - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`. Without that, promote fails with `GitHub Actions is not permitted to create or approve pull requests`.
 - **CodeQL** — runs on `main` / `master` / `dev`.
 - **Publish / release** — `workflow_dispatch` only (see [publishing.md](publishing.md)).
 - Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing `ci.yml`.
