@@ -15,7 +15,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Bump suffix when Actions leaves ghost queued runs that block cancel-in-progress.
+  group: test-v2-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
