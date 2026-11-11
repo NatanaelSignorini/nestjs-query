@@ -1,4 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
+import { Inject, Optional } from '@nestjs/common'
 import { Args, ArgsType, InputType, ObjectType, PartialType, Resolver } from '@nestjs/graphql'
 import { Class, DeleteManyResponse, Filter, mergeFilter, QueryService } from '@ptc-org/nestjs-query-core'
 import omit from 'lodash.omit'
@@ -8,6 +9,12 @@ import { DTONames, getDTONames } from '../common'
 import { AuthorizerFilter, MutationHookArgs, ResolverMutation, ResolverSubscription } from '../decorators'
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
+import {
+  assertMaxAffected,
+  assertNonEmptyClientFilter,
+  NESTJS_QUERY_SECURITY_OPTIONS,
+  NestjsQuerySecurityOptions
+} from '../security'
 import { EventType, getDTOEventName } from '../subscription'
 import {
   DeleteManyInputType,
@@ -35,6 +42,7 @@ export interface DeleteResolverOpts<DTO> extends SubscriptionResolverOpts {
    * Use soft delete when doing delete mutation
    */
   useSoftDelete?: boolean
+  many?: SubscriptionResolverOpts['many'] & { allowEmptyFilter?: boolean }
 }
 
 export interface DeleteResolver<DTO, QS extends QueryService<DTO, unknown, unknown>> extends ServiceResolver<DTO, QS> {
@@ -116,6 +124,10 @@ export const Deletable =
 
     @Resolver(() => DTOClass, { isAbstract: true })
     class DeleteResolverBase extends BaseClass {
+      @Optional()
+      @Inject(NESTJS_QUERY_SECURITY_OPTIONS)
+      readonly security?: NestjsQuerySecurityOptions
+
       @ResolverMutation(
         () => DeleteOneResponse,
         { name: deleteOneMutationName, description: opts?.one?.description, complexity: opts?.one?.complexity },
@@ -156,7 +168,10 @@ export const Deletable =
         })
         authorizeFilter?: Filter<DTO>
       ): Promise<DeleteManyResponse> {
-        const deleteManyResponse = await this.service.deleteMany(mergeFilter(input.input.filter, authorizeFilter ?? {}), {
+        assertNonEmptyClientFilter(input.input.filter, this.security, opts.many)
+        const mergedFilter = mergeFilter(input.input.filter, authorizeFilter ?? {})
+        await assertMaxAffected(await this.service.count(mergedFilter), this.security)
+        const deleteManyResponse = await this.service.deleteMany(mergedFilter, {
           useSoftDelete: opts?.useSoftDelete ?? false
         })
         if (enableManySubscriptions) {

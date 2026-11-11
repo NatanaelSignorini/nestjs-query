@@ -59,7 +59,9 @@ export { AutoResolverOpts } from './providers'
 export * from './resolvers'
 export {
   AuthorizationMode,
+  DEFAULT_MASS_MUTATION_SECURITY_OPTIONS,
   DEFAULT_SECURITY_OPTIONS,
+  MassMutationSecurityOptions,
   MissingAuthorizerError,
   NESTJS_QUERY_SECURITY_OPTIONS,
   NestjsQuerySecurityOptions

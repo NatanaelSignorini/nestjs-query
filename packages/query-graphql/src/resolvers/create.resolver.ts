@@ -3,6 +3,7 @@
  * @packageDocumentation
  */
 // eslint-disable-next-line max-classes-per-file
+import { Inject, Optional } from '@nestjs/common'
 import { Args, ArgsType, InputType, OmitType, Resolver } from '@nestjs/graphql'
 import { AuthValidationOpts, Class, DeepPartial, Filter, QueryService } from '@ptc-org/nestjs-query-core'
 import omit from 'lodash.omit'
@@ -12,6 +13,7 @@ import { DTONames, getDTONames } from '../common'
 import { AuthorizerFilter, MutationHookArgs, ResolverMutation, ResolverSubscription } from '../decorators'
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
+import { assertCreateManyBatchSize, NESTJS_QUERY_SECURITY_OPTIONS, NestjsQuerySecurityOptions } from '../security'
 import { EventType, getDTOEventName } from '../subscription'
 import {
   CreateManyInputType,
@@ -125,6 +127,10 @@ export const Creatable =
 
     @Resolver(() => DTOClass, { isAbstract: true })
     class CreateResolverBase extends BaseClass {
+      @Optional()
+      @Inject(NESTJS_QUERY_SECURITY_OPTIONS)
+      readonly security?: NestjsQuerySecurityOptions
+
       @ResolverMutation(
         () => DTOClass,
         { name: createOneMutationName, description: opts?.one?.description, complexity: opts?.one?.complexity },
@@ -167,6 +173,7 @@ export const Creatable =
         })
         authorizeFilter?: Filter<DTO>
       ): Promise<DTO[]> {
+        assertCreateManyBatchSize(input.input.input.length, this.security)
         const createManyOpts = validateCreateManyWithAuthFilter && authorizeFilter ? { filter: authorizeFilter } : undefined
         const created = await this.service.createMany(input.input.input, createManyOpts)
         if (enableManySubscriptions) {
