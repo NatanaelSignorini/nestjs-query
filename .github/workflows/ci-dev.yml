@@ -1,0 +1,87 @@
+name: CI Dev
+
+# Light gate for `dev` only. Must NOT emit a check named `ci` (skipped or otherwise),
+# or promote PRs to `main` can auto-merge on a skipped required check from the same SHA.
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-dev-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NX_BRANCH: ${{ github.event.number }}
+  NX_RUN_GROUP: ${{ github.run_id }}
+
+jobs:
+  setup:
+    uses: ./.github/workflows/shared.setup-env.yml
+
+  check-dev:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [24.x]
+        target: ['build', 'test', 'lint']
+    steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup-step
+
+      - name: GIT config
+        if: matrix.target == 'build'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: nx workspace:version
+        if: matrix.target == 'build'
+        run: yarn nx run workspace:version
+
+      - name: Clean dist outputs
+        if: matrix.target == 'build'
+        run: rm -rf dist
+
+      - name: nx affected:${{ matrix.target }}
+        run: |
+          if [ "${{ matrix.target }}" = "build" ]; then
+            yarn nx run-many --target=build --all --parallel=1 \
+              || (rm -rf dist && yarn nx run-many --target=build --all --parallel=1)
+          else
+            yarn nx run-many --target=${{ matrix.target }} --all
+          fi
+        env:
+          NODE_OPTIONS: ${{ matrix.target == 'test' && '--experimental-vm-modules' || '' }}
+
+  # Required status check name for `dev` branch protection.
+  ci-dev:
+    name: ci-dev
+    needs: [check-dev]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify light pipeline
+        run: |
+          echo "check-dev=${{ needs.check-dev.result }}"
+          if [ "${{ needs.check-dev.result }}" != "success" ]; then
+            echo "Light pipeline failed or was skipped"
+            exit 1
+          fi
