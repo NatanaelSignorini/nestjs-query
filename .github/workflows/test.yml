@@ -3,12 +3,20 @@ name: Test
 on:
   push:
     branches:
+      - main
       - master
       - releases/*
   pull_request:
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   NX_BRANCH: ${{ github.event.number }}
@@ -119,3 +127,22 @@ jobs:
         run: |
           cd examples/federation-v2-e2e
           docker compose logs
+
+  # Single required status check for branch protection / rulesets.
+  ci:
+    name: ci
+    needs: [check, e2e-test, federation-e2e-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs
+        run: |
+          echo "check=${{ needs.check.result }}"
+          echo "e2e-test=${{ needs.e2e-test.result }}"
+          echo "federation-e2e-test=${{ needs.federation-e2e-test.result }}"
+          if [ "${{ needs.check.result }}" != "success" ] \
+            || [ "${{ needs.e2e-test.result }}" != "success" ] \
+            || [ "${{ needs.federation-e2e-test.result }}" != "success" ]; then
+            echo "One or more required pipeline jobs failed or were skipped"
+            exit 1
+          fi
