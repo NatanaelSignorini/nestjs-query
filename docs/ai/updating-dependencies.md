@@ -41,7 +41,7 @@ Dependabot may open grouped PRs under `dependabot/npm_and_yarn/development-depen
    ```
 
 6. PR → `dev`; wait for **`check (dev)`**.
-7. When ready for production, run **Promote dev to main** manually; watch that PR for full **`check (main)`** (e2e/federation often break on GraphQL/Apollo/Babel peer drift).
+7. After merge to `dev`, successful **`CI (dev)`** on the push auto-opens/refreshes the promote PR to `main`; watch that PR for full **`check (main)`** (e2e/federation often break on GraphQL/Apollo/Babel peer drift). Use Actions → **Promote dev to main** only if you need a manual re-run.
 
 ## Federation / Babel
 

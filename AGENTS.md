@@ -31,9 +31,9 @@ These files are **not** registered in Mintlify `docs/docs.json`. They are for ag
 
 - Open feature and chore PRs against **`dev`**.
 - PRs/pushes to `dev` run workflow **`check (dev)`** and must pass required check **`check (dev)`** (Node 24: lint + build + unit test). No e2e or federation on that gate.
-- When `dev` is ready for production, run **Promote dev to main** manually (Actions → Run workflow). That opens/refreshes a PR `dev` → `main` with auto-merge.
+- After a **push** to `dev` (typically merge of a feature PR) and **`CI (dev)`** / **`check (dev)`** succeed, workflow **Promote dev to main** opens/refreshes PR `dev` → `main` automatically (title `chore(release): promote dev to main (<sha7>)`) and enables auto-merge. Manual **workflow_dispatch** remains as an escape hatch.
 - That promote PR runs workflow **`CI (main)`** and must pass required check **`check (main)`** (Node 24/26 matrix, e2e postgres/mysql, federation); GitHub then auto-merges into `main`.
-- Promote is **not** automatic on push/PR to `dev` (avoids spam PRs and skipped Promote runs from `workflow_run`).
+- Promote does **not** run on `pull_request` CI (dev) completions — only on successful **push** to `dev` (plus manual dispatch).
 - **`CI (main)` and `CI (dev)` are separate workflow files** so push-to-`dev` never posts a skipped check named `check (main)` on the same SHA.
 - Do not open feature PRs directly to `main` unless you are changing promote/CI wiring itself.
 - **Do not open PRs `main` → `dev`** (including GitHub “sync” after promote). That produces noise merges whose Actions titles say `/main` while the push is still to `dev`. Details: [docs/ai/branch-and-ci.md](docs/ai/branch-and-ci.md).
@@ -93,7 +93,7 @@ After dependency bumps, run Prettier if the Prettier major/minor changed, and ke
 - `docs`: Mintlify user documentation (`docs.json` navigation).
 - `docs/ai`: agent/maintainer playbooks (this fork’s operating manual).
 - `tools`: shared tooling and custom ESLint rules.
-- `.github/workflows`: `ci-dev.yml` (`CI (dev)`), `ci.yml` (`CI (main)` + `workflow_dispatch`), `promote-dev.yml` (manual `workflow_dispatch` only), `codeql-analysis.yml` (`Code scanning`), publish/release (`workflow_dispatch` only).
+- `.github/workflows`: `ci-dev.yml` (`CI (dev)`), `ci.yml` (`CI (main)` + `workflow_dispatch`), `promote-dev.yml` (`workflow_run` on successful CI (dev) push to `dev` + `workflow_dispatch`), `codeql-analysis.yml` (`Code scanning`), publish/release (`workflow_dispatch` only).
 
 ## Hard constraints for agents
 
