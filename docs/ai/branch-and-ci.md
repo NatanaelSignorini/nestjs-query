@@ -17,7 +17,7 @@
 | From → To | Allowed? | How |
 | --------- | -------- | --- |
 | feature/chore → **`dev`** | Yes | Normal PRs |
-| **`dev` → `main`** | Yes | Only via Actions → **Promote dev to main** |
+| **`dev` → `main`** | Yes | Auto after green **CI (dev)** on push to `dev` (Promote workflow); manual dispatch as escape hatch |
 | feature → **`main`** | No (rare exception) | Only when changing promote/CI wiring itself |
 | **`main` → `dev`** | **No** (do not open by hand) | See below |
 
@@ -39,11 +39,11 @@ Active definitions live under `.github/workflows/`. **Light and full gates are s
   - Triggers: `push` / `pull_request` to **`main` / `master` / `releases/*`**, plus `workflow_dispatch`.
   - Jobs: `setup` → `check` (Node `24.x`/`26.x` × build/test/lint) + `e2e-test` (postgres/mysql) + `federation-e2e-test` → aggregator **`check (main)`**.
   - Concurrency: `ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`.
-- **`promote-dev.yml`** — **`workflow_dispatch` only** (Actions → **Promote dev to main** → Run workflow). Creates/refreshes PR `dev` → `main` and enables auto-merge. Full **`check (main)`** from workflow `CI (main)` on that PR must pass; then GitHub merges into `main`.
-  - Not tied to `CI (dev)` completions — avoids duplicate/skipped Promote runs and spam while fixing work on `dev`.
+- **`promote-dev.yml`** — automatic after **`CI (dev)`** succeeds on a **`push`** to **`dev`** (`workflow_run`), plus manual **`workflow_dispatch`** escape hatch. Creates/refreshes PR `dev` → `main` with title `chore(release): promote dev to main (<sha7>)`, updates the body (commits ahead + CI (dev) run link), and enables auto-merge. Full **`check (main)`** from workflow `CI (main)` on that PR must pass; then GitHub merges into `main`.
+  - Job `if`: `workflow_dispatch` **or** (`workflow_run.conclusion == success` && `event == push` && `head_branch == dev`). Does **not** promote on PR-targeted `CI (dev)` runs.
   - Requires repo Actions setting **Allow GitHub Actions to create and approve pull requests** (`can_approve_pull_request_reviews: true` on `/actions/permissions/workflow`), plus workflow `permissions: pull-requests: write`.
   - Set Actions secret **`PROMOTE_TOKEN`** to a maintainer PAT (repo `contents` + `pull_requests`). Promote uses it instead of `GITHUB_TOKEN` so the PR is not opened as `github-actions[bot]`. Bot-authored PRs leave CI / Code scanning in **`action_required`** until someone clicks **Approve and run workflows** (or `POST .../actions/runs/{id}/approve`).
-  - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first, then run promote again.
+  - If the promote PR is **BEHIND** `main` (strict checks), sync `main` into `dev` first (via a normal PR into `dev`); the next green push-to-`dev` promote (or manual dispatch) refreshes auto-merge.
 - **`codeql-analysis.yml`** — name **`Code scanning`** (GitHub CodeQL engine). Runs on `main` / `master` / `dev`.
 - **Publish / release** — `workflow_dispatch` only (see [publishing.md](publishing.md)).
 - Legacy **`test.yml`** remains disabled manually; do not re-enable without replacing these workflows.
@@ -73,9 +73,9 @@ GitHub associates check runs with the **commit SHA**. When light and full gates 
 
 1. Branch from `dev`.
 2. Implement + unit tests; run smallest `yarn nx lint|test|build <project>`.
-3. Open PR → `dev`; wait for **`check (dev)`**.
-4. Merge when green. Keep iterating on `dev` until ready for production.
-5. When ready: Actions → **Promote dev to main** → Run workflow. Watch the promote PR for full **`check (main)`** (e2e/federation); auto-merge lands on `main` when green. Fix on a follow-up PR into `dev` if promote CI fails; do not bypass `main` protection casually.
+3. Open PR → `dev` **manually**; wait for **`check (dev)`**.
+4. Merge when green. Push to `dev` runs **`CI (dev)`** again.
+5. On successful **`CI (dev)`** for that push, **Promote dev to main** opens/refreshes PR `dev` → `main` (`chore(release): promote dev to main (<sha7>)`) with auto-merge. Watch that PR for full **`check (main)`** (e2e/federation); auto-merge lands on `main` when green. If promote CI fails, fix on a follow-up PR into `dev` (next green push re-promotes). Manual dispatch remains available. Do not bypass `main` protection casually.
 
 ## Stuck Actions / ghost runs
 

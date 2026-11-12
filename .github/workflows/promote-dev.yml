@@ -1,12 +1,17 @@
 name: Promote dev to main
 
-# Manual only: run from Actions when `dev` is ready for production.
-# Opens/refreshes PR `dev` → `main` and enables auto-merge; `CI (main)` /
-# `check (main)` must pass before GitHub merges into `main`.
+# After light CI (dev) succeeds on a push to `dev`, open/update a PR to `main`
+# and enable auto-merge. Branch protection on `main` still requires the full
+# `check (main)` check from workflow `CI (main)`.
+#
+# Also supports workflow_dispatch as a manual escape hatch.
 #
 # Use secrets.PROMOTE_TOKEN (classic PAT or fine-grained with contents+PR on this repo)
 # so the PR is authored by a human user and CI/Code scanning run without "Approve and run".
 on:
+  workflow_run:
+    workflows: ['CI (dev)']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -15,12 +20,21 @@ permissions:
 
 jobs:
   promote:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'dev')
     runs-on: ubuntu-latest
     steps:
       - name: Create or refresh promote PR
         env:
           GH_TOKEN: ${{ secrets.PROMOTE_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_HTML_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
 
@@ -28,18 +42,67 @@ jobs:
             echo "::warning::PROMOTE_TOKEN is not set; using GITHUB_TOKEN. Promote PRs may require manual Approve and run for CI / Code scanning."
           fi
 
+          if [ "$EVENT_NAME" = "workflow_run" ] && [ -n "${RUN_HEAD_SHA:-}" ]; then
+            DEV_SHA="$RUN_HEAD_SHA"
+          else
+            DEV_SHA="$(gh api "repos/${GH_REPO}/commits/dev" --jq '.sha')"
+          fi
+          DEV_SHA7="$(printf '%s' "$DEV_SHA" | cut -c1-7)"
+          TITLE="chore(release): promote dev to main (${DEV_SHA7})"
+
+          COMMITS="$(
+            gh api "repos/${GH_REPO}/compare/main...dev" --jq '
+              [.commits[-15:][] |
+                "- `" + .sha[0:7] + "` " + (.commit.message | split("\n")[0])
+              ] | join("\n")
+            ' || true
+          )"
+          if [ -z "$COMMITS" ]; then
+            COMMITS="_No commits listed (compare empty or API error)._"
+          fi
+
+          {
+            echo "Promote \`${DEV_SHA7}\` from \`dev\` to \`main\`."
+            echo
+            if [ "$EVENT_NAME" = "workflow_run" ]; then
+              echo "Triggered automatically after **CI (dev)** / \`check (dev)\` passed on push to \`dev\`."
+              if [ -n "${RUN_HTML_URL:-}" ]; then
+                echo
+                echo "- CI (dev) run: ${RUN_HTML_URL}"
+              fi
+              if [ -n "${RUN_ID:-}" ]; then
+                echo "- workflow_run id: \`${RUN_ID}\`"
+              fi
+            else
+              echo "Triggered manually via Actions → **Promote dev to main** → Run workflow."
+            fi
+            echo
+            echo "## Commits on \`dev\` not in \`main\` (up to 15)"
+            echo
+            echo "$COMMITS"
+            echo
+            echo "## Gate"
+            echo
+            echo "Full **CI (main)** / required \`check (main)\` (Node 24/26 lint/build/test, e2e postgres/mysql, federation) must pass on this PR; auto-merge into \`main\` runs when checks are green."
+            echo
+            echo "\`CI (main)\` and \`CI (dev)\` are separate workflows so push-to-\`dev\` never posts a skipped check named \`check (main)\` on the same SHA."
+            echo
+            echo "Tip SHA: \`${DEV_SHA}\`"
+          } > /tmp/promote-pr-body.md
+
           existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // empty')"
+
           if [ -z "$existing" ]; then
             gh pr create \
               --base main \
               --head dev \
-              --title "chore: promote dev to main" \
-              --body "Manual promote from \`dev\` (Actions → **Promote dev to main** → Run workflow).
-
-          Full CI (\`CI (main)\` / \`check (main)\`: lint/build/test matrix, e2e, federation) must pass on this PR; auto-merge into \`main\` runs when checks are green."
+              --title "$TITLE" \
+              --body-file /tmp/promote-pr-body.md
             existing="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')"
+          else
+            gh pr edit "$existing" --title "$TITLE" --body-file /tmp/promote-pr-body.md
           fi
 
-          echo "Promote PR #$existing"
+          echo "Promote PR #$existing ($TITLE)"
           gh api -X PUT "repos/${GH_REPO}/pulls/${existing}/update-branch" || true
           gh pr merge "$existing" --auto --merge
