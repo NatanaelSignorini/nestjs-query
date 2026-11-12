@@ -23,7 +23,7 @@ import {
   UpdateManyResponse,
   UpdateOneOptions
 } from '@ptc-org/nestjs-query-core'
-import { DeleteResult, FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm'
+import { DeleteResult, FindOptionsWhere, In, ObjectLiteral, Repository } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 import { UpdateResult } from 'typeorm/query-builder/result/UpdateResult'
 
@@ -222,9 +222,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    */
   public async createMany(records: DeepPartial<Entity>[], opts?: CreateManyOptions<Entity>): Promise<Entity[]> {
     const creatableRecords = filterCreatableRecords(records as Entity[], opts?.filter)
-    const entities = await Promise.all(
-      creatableRecords.map((creatableRecord) => this.ensureIsEntityAndDoesNotExist(creatableRecord as DeepPartial<Entity>))
-    )
+    const entities = creatableRecords.map((creatableRecord) => this.toEntity(creatableRecord as DeepPartial<Entity>))
+    await this.ensureEntitiesDoNotExist(entities)
     return this.repo.save(entities)
   }
 
@@ -392,24 +391,48 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
   }
 
   private async ensureIsEntityAndDoesNotExist(entity: DeepPartial<Entity>): Promise<Entity> {
-    if (!(entity instanceof this.EntityClass)) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return this.ensureEntityDoesNotExist(this.repo.create(entity))
-    }
-    return this.ensureEntityDoesNotExist(entity)
+    const instance = this.toEntity(entity)
+    await this.ensureEntitiesDoNotExist([instance])
+    return instance
   }
 
-  private async ensureEntityDoesNotExist(e: Entity): Promise<Entity> {
-    if (this.repo.hasId(e)) {
-      const where = this.repo.metadata.getEntityIdMap(e) as FindOptionsWhere<Entity>
-      const found = await this.repo.findOne({ where })
+  private toEntity(entity: DeepPartial<Entity>): Entity {
+    if (entity instanceof this.EntityClass) {
+      return entity
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this.repo.create(entity)
+  }
 
-      if (found) {
+  /**
+   * Rejects when any entity that already has an id is present in the database.
+   * Uses a single batched lookup for createMany instead of one findOne per record.
+   */
+  private async ensureEntitiesDoNotExist(entities: Entity[]): Promise<void> {
+    const entitiesWithIds = entities.filter((entity) => this.repo.hasId(entity))
+    if (entitiesWithIds.length === 0) {
+      return
+    }
+
+    const primaryColumns = this.repo.metadata.primaryColumns
+    if (primaryColumns.length === 1) {
+      const idProperty = primaryColumns[0].propertyName
+      const ids = entitiesWithIds.map((entity) => (entity as Record<string, unknown>)[idProperty])
+      const existingCount = await this.repo.count({
+        where: { [idProperty]: In(ids) } as FindOptionsWhere<Entity>
+      })
+      if (existingCount > 0) {
         throw new Error('Entity already exists')
       }
+      return
     }
-    return e
+
+    const where = entitiesWithIds.map((entity) => this.repo.metadata.getEntityIdMap(entity) as FindOptionsWhere<Entity>)
+    const existingCount = await this.repo.count({ where })
+    if (existingCount > 0) {
+      throw new Error('Entity already exists')
+    }
   }
 
   private ensureIdIsNotPresent(e: DeepPartial<Entity>): void {
