@@ -489,8 +489,12 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
   }
 
   /**
-   * Rejects when any entity that already has an id is present in the database.
+   * Rejects when any entity that already has an id is present in the database,
+   * or when the batch itself contains duplicate primary keys.
    * Uses a single batched lookup for createMany instead of one findOne per record.
+   *
+   * Best-effort only: concurrent creates can still race past this check; rely on
+   * database unique / primary-key constraints as the authoritative guard.
    */
   private async ensureEntitiesDoNotExist(entities: Entity[]): Promise<void> {
     const entitiesWithIds = entities.filter((entity) => this.repo.hasId(entity))
@@ -502,6 +506,9 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
     if (primaryColumns.length === 1) {
       const idProperty = primaryColumns[0].propertyName
       const ids = entitiesWithIds.map((entity) => (entity as Record<string, unknown>)[idProperty])
+      if (ids.length !== new Set(ids).size) {
+        throw new Error('Entity already exists')
+      }
       const existingCount = await this.repo.count({
         where: { [idProperty]: In(ids) } as FindOptionsWhere<Entity>
       })
@@ -509,6 +516,13 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
         throw new Error('Entity already exists')
       }
       return
+    }
+
+    const idKeys = entitiesWithIds.map((entity) =>
+      primaryColumns.map((column) => String((entity as Record<string, unknown>)[column.propertyName])).join('\0')
+    )
+    if (idKeys.length !== new Set(idKeys).size) {
+      throw new Error('Entity already exists')
     }
 
     const where = entitiesWithIds.map((entity) => this.repo.metadata.getEntityIdMap(entity) as FindOptionsWhere<Entity>)

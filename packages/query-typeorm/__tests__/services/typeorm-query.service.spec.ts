@@ -41,6 +41,12 @@ describe('TypeOrmQueryService', (): void => {
     }
   }
 
+  class TestEntityRelationService extends TypeOrmQueryService<TestEntityRelationEntity> {
+    constructor(@InjectRepository(TestEntityRelationEntity) readonly repo: Repository<TestEntityRelationEntity>) {
+      super(repo)
+    }
+  }
+
   afterEach(() => {
     const dataSource = moduleRef.get(getDataSourceToken())
     return dataSource.destroy()
@@ -52,7 +58,7 @@ describe('TypeOrmQueryService', (): void => {
         TypeOrmModule.forRoot(CONNECTION_OPTIONS),
         TypeOrmModule.forFeature([TestEntity, TestRelation, TestEntityRelationEntity, TestSoftDeleteEntity])
       ],
-      providers: [TestEntityService, TestRelationService, TestSoftDeleteEntityService]
+      providers: [TestEntityService, TestRelationService, TestSoftDeleteEntityService, TestEntityRelationService]
     }).compile()
 
     const dataSource = moduleRef.get(getDataSourceToken())
@@ -1992,6 +1998,55 @@ describe('TypeOrmQueryService', (): void => {
       expect(findOneSpy).not.toHaveBeenCalled()
       expect(countSpy).toHaveBeenCalledTimes(1)
       findOneSpy.mockRestore()
+      countSpy.mockRestore()
+    })
+
+    it('should reject duplicate primary keys within the same batch', async () => {
+      await truncate(moduleRef.get(getDataSourceToken()))
+      const queryService = moduleRef.get(TestEntityService)
+      const countSpy = jest.spyOn(queryService.repo, 'count')
+      const duplicate = {
+        testEntityPk: 'dup-pk',
+        boolType: true,
+        dateType: new Date('2020-02-01 12:00'),
+        numberType: 1,
+        stringType: 'dup'
+      }
+
+      await expect(queryService.createMany([duplicate, { ...duplicate, stringType: 'dup-2' }])).rejects.toThrow(
+        'Entity already exists'
+      )
+      expect(countSpy).not.toHaveBeenCalled()
+      countSpy.mockRestore()
+    })
+
+    it('should reject when a composite primary key already exists', async () => {
+      const queryService = moduleRef.get(TestEntityRelationService)
+      const entity = TEST_ENTITIES[0]
+      const relation = TEST_RELATIONS.find((r) => r.testEntityId === entity.testEntityPk)
+      if (!relation) {
+        throw new Error('expected seeded relation for TEST_ENTITIES[0]')
+      }
+      const record = {
+        testEntityId: entity.testEntityPk,
+        testRelationId: relation.testRelationPk
+      }
+      await queryService.repo.save(record)
+
+      await expect(queryService.createMany([record])).rejects.toThrow('Entity already exists')
+    })
+
+    it('should reject duplicate composite primary keys within the same batch', async () => {
+      await truncate(moduleRef.get(getDataSourceToken()))
+      const queryService = moduleRef.get(TestEntityRelationService)
+      const countSpy = jest.spyOn(queryService.repo, 'count')
+      const record = {
+        testEntityId: 'composite-entity-1',
+        testRelationId: 'composite-relation-1'
+      }
+
+      await expect(queryService.createMany([record, { ...record }])).rejects.toThrow('Entity already exists')
+      expect(countSpy).not.toHaveBeenCalled()
       countSpy.mockRestore()
     })
 

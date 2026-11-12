@@ -3,8 +3,10 @@ import { Filter } from './filter.interface'
 /**
  * How persistence adapters should apply `updateOne`.
  *
- * - `save` — load, merge, and save (default). Preserves ORM entity listeners/subscribers.
- * - `execute` — run an UPDATE query then reload. Skips entity-level save listeners; prefer for hot paths.
+ * - `save` — load, merge, and save (default). Preserves ORM entity listeners/subscribers,
+ *   relation cascades on save, and typical `@VersionColumn` / optimistic-lock behaviour.
+ * - `execute` — run an UPDATE query then reload. Skips entity-level save listeners, does not
+ *   apply the same cascade / version semantics as `save`; prefer for simple hot-path column updates.
  */
 export type UpdateOneStrategy = 'save' | 'execute'
 

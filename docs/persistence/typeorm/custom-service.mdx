@@ -15,7 +15,8 @@ import { TodoItemEntity } from './todo-item.entity'
 export class TodoItemService extends TypeOrmQueryService<TodoItemEntity> {
 
   constructor(@InjectRepository(TodoItemEntity) repo: Repository<TodoItemEntity>) {
-    // Optional: default updateOne to SQL UPDATE + reload (skips TypeORM save listeners).
+    // Optional: default updateOne to SQL UPDATE + reload (skips TypeORM save listeners,
+    // relation cascades on save, and typical @VersionColumn behaviour). Prefer `save` when those matter.
     // Per-call override: updateOne(id, data, { updateStrategy: 'save' | 'execute' })
     super(repo, { updateStrategy: 'save' })
   }

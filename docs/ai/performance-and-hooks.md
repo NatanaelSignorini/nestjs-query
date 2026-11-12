@@ -28,4 +28,50 @@ Maintainer notes for this fork. Update this file when the decisions below change
 | `assertMaxAffectedFromCount` | mass mutations | skips count when `maxAffected` is unset |
 | Look-ahead / DataLoader | GraphQL relations | look-ahead opt-in for `@Relation`; DataLoader for many |
 
+### Notes
+
+- **`createMany` existence check** (TypeORM): one batched `count` (`In(ids)` or OR of composite id maps) plus rejection of duplicate primary keys **inside the same batch**. Still best-effort under concurrency — database unique / primary-key constraints remain the authoritative guard (PostgreSQL and others).
+- **`updateStrategy: 'execute'`**: SQL `UPDATE` + reload. Skips TypeORM `save` listeners; does not mirror relation cascades or typical `@VersionColumn` behaviour of `save`. Keep default `save` unless the update is a simple column hot path.
+- **`selectFromResolveInfo`**: opt-in on GraphQL **read** only; partial entities may have unrequested properties as `undefined`.
+
+### Microbenchmark (manual, not CI)
+
+Harness: `packages/query-typeorm/benchmarks/typeorm-perf.bench.ts`  
+Command:
+
+```sh
+# Unix
+NODE_OPTIONS=--experimental-vm-modules yarn nx bench query-typeorm
+
+# PowerShell
+$env:NODE_OPTIONS='--experimental-vm-modules'; yarn nx bench query-typeorm
+```
+
+Scope is intentionally narrow: TypeORM `QueryService` against in-memory **sql.js**, sizes **100** and **1000**, median of 5 iterations after 1 warmup. It does **not** exercise GraphQL HTTP, deep relation graphs, or 10k batches (those mix unrelated costs and fight `maxBatchSize`).
+
+Example run (Node **24.19.0**, Windows, sql.js `:memory:`):
+
+| scenario | N | variant | median ms | approx SQL statements |
+| --- | ---: | --- | ---: | ---: |
+| createMany (ids pre-set, empty table) | 100 | legacy N×findOne + save | 13.5 | 111 |
+| createMany (ids pre-set, empty table) | 100 | batched count + save | 5.1 | 12 |
+| query (all columns vs projected) | 100 | selectFromResolveInfo=false | 1.1 | 1 |
+| query (all columns vs projected) | 100 | selectFromResolveInfo=true (pk+stringType) | 0.5 | 1 |
+| updateOne × N (sequential) | 100 | updateStrategy=save | 42.5 | 500 |
+| updateOne × N (sequential) | 100 | updateStrategy=execute | 25.3 | 200 |
+| createMany (ids pre-set, empty table) | 1000 | legacy N×findOne + save | 88.2 | 1011 |
+| createMany (ids pre-set, empty table) | 1000 | batched count + save | 42.8 | 12 |
+| query (all columns vs projected) | 1000 | selectFromResolveInfo=false | 9.6 | 1 |
+| query (all columns vs projected) | 1000 | selectFromResolveInfo=true (pk+stringType) | 3.1 | 1 |
+| updateOne × N (sequential) | 1000 | updateStrategy=save | 336.9 | 5000 |
+| updateOne × N (sequential) | 1000 | updateStrategy=execute | 203.4 | 2000 |
+
+Reading the numbers:
+
+- **createMany**: SQL statements drop from ~N+save overhead to a single existence `count` + save (~**1011 → 12** at N=1000). Wall time roughly halves on sql.js; the round-trip win is larger on a remote PostgreSQL.
+- **selectFromResolveInfo**: same statement count (1), lower ms from less row materialization (entity is narrow here; gains grow with wide rows / network).
+- **execute vs save**: fewer statements (~**2N vs ~5N** here: UPDATE+reload vs load+save patterns) and lower median ms; use only when listeners/cascades/versioning of `save` are not required.
+
+Re-run after meaningful TypeORM or Node changes and replace the table above.
+
 User-facing docs: `docs/graphql/relations.mdx`, `docs/graphql/dataloaders.mdx`, `docs/graphql/resolvers.mdx` (`selectFromResolveInfo`), `docs/graphql/hooks.mdx`, `docs/persistence/typeorm/custom-service.mdx`.
