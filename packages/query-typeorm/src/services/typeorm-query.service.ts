@@ -17,11 +17,13 @@ import {
   filterCreatableRecords,
   FindByIdOptions,
   GetByIdOptions,
+  mergeFilter,
   Query,
   QueryOptions,
   QueryService,
   UpdateManyResponse,
-  UpdateOneOptions
+  UpdateOneOptions,
+  UpdateOneStrategy
 } from '@ptc-org/nestjs-query-core'
 import { DeleteResult, FindOptionsWhere, In, ObjectLiteral, Repository } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
@@ -33,6 +35,11 @@ import { RelationQueryService } from './relation-query.service'
 export interface TypeOrmQueryServiceOpts<Entity extends ObjectLiteral> {
   useSoftDelete?: boolean
   filterQueryBuilder?: FilterQueryBuilder<Entity>
+  /**
+   * Default strategy for {@link TypeOrmQueryService.updateOne}. Per-call `opts.updateStrategy` wins.
+   * Default: `save`.
+   */
+  updateStrategy?: UpdateOneStrategy
 }
 
 /**
@@ -59,6 +66,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
 
   readonly useSoftDelete: boolean
 
+  readonly updateStrategy: UpdateOneStrategy
+
   constructor(
     readonly repo: Repository<Entity>,
     opts?: TypeOrmQueryServiceOpts<Entity>
@@ -67,6 +76,7 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
 
     this.filterQueryBuilder = opts?.filterQueryBuilder ?? new FilterQueryBuilder<Entity>(this.repo)
     this.useSoftDelete = opts?.useSoftDelete ?? false
+    this.updateStrategy = opts?.updateStrategy ?? 'save'
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -241,10 +251,45 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    */
   async updateOne(id: number | string, update: DeepPartial<Entity>, opts?: UpdateOneOptions<Entity>): Promise<Entity> {
     this.ensureIdIsNotPresent(update)
+    const strategy = opts?.updateStrategy ?? this.updateStrategy
+    if (strategy === 'execute') {
+      return this.updateOneExecute(id, update, opts)
+    }
     const entity = await this.getById(id, opts)
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return this.repo.save(this.repo.merge(entity, update))
+  }
+
+  /**
+   * UPDATE via QueryBuilder then reload. Does not run TypeORM `save` listeners.
+   */
+  private async updateOneExecute(
+    id: number | string,
+    update: DeepPartial<Entity>,
+    opts?: UpdateOneOptions<Entity>
+  ): Promise<Entity> {
+    if (this.repo.metadata.primaryColumns.length !== 1) {
+      // Composite PKs: fall back to save path for correct id targeting.
+      const entity = await this.getById(id, opts)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return this.repo.save(this.repo.merge(entity, update))
+    }
+
+    const idProperty = this.repo.metadata.primaryColumns[0].propertyName
+    const idFilter = { [idProperty]: { eq: id } } as Filter<Entity>
+    const filter = mergeFilter(idFilter, opts?.filter ?? {})
+    const updateResult = await this.filterQueryBuilder
+      .update({ filter })
+      .set({ ...(update as QueryDeepPartialEntity<Entity>) })
+      .execute()
+
+    if (!updateResult.affected) {
+      throw new NotFoundException(`Unable to find ${this.EntityClass.name} with id: ${id}`)
+    }
+
+    return this.getById(id, opts)
   }
 
   /**

@@ -2122,6 +2122,19 @@ describe('TypeOrmQueryService', (): void => {
       expect(updated).toEqual({ ...TEST_ENTITIES[0], stringType: 'updated' })
     })
 
+    it('should update with execute strategy without using save', async () => {
+      const queryService = moduleRef.get(TestEntityService)
+      const saveSpy = jest.spyOn(queryService.repo, 'save')
+      const updated = await queryService.updateOne(
+        TEST_ENTITIES[1].testEntityPk,
+        { stringType: 'updated-execute' },
+        { updateStrategy: 'execute' }
+      )
+      expect(updated).toEqual({ ...TEST_ENTITIES[1], stringType: 'updated-execute' })
+      expect(saveSpy).not.toHaveBeenCalled()
+      saveSpy.mockRestore()
+    })
+
     it('should reject if the update contains a primary key', async () => {
       const queryService = moduleRef.get(TestEntityService)
       return expect(queryService.updateOne(TEST_ENTITIES[0].testEntityPk, { testEntityPk: 'bad-id' })).rejects.toThrow(
