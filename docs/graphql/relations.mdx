@@ -21,6 +21,14 @@ description: 'When using the  you can specify relations that should be exposed f
   prevents the n+1 problem.
 </Note>
 
+<Warning>
+  DataLoader does **not** limit nesting depth. Bidirectional relations (for example parent ↔ child) can be queried in a cycle until
+  the Node process runs out of memory. Deep relation filters can also expand into large TypeORM JOIN result sets.
+  Prefer `@OffsetConnection` / `@CursorConnection` over `@UnPagedRelation` for large collections, keep `filterDepth` small, set
+  field/relation `complexity`, and enable a complexity (and ideally depth) plugin in your app — see
+  [complexity FAQ](../faq#does-nestjs-query-support-specifying-complexity) and the `examples/complexity` app.
+</Warning>
+
 In the following examples we are going to use the following entities.
 
 <Tabs>

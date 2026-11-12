@@ -97,6 +97,27 @@ NestjsQueryGraphQLModule.forRoot({
 // @UnPagedRelation already sets allowUnlimited for nested collections.
 ```
 
+## Query complexity, filter depth, and relation OOM (guidance)
+
+NestJS Query does **not** enforce GraphQL nesting depth by default. With TypeORM + GraphQL, Node can OOM when clients:
+
+- nest bidirectional relations in a cycle (`A → B → A → …`)
+- use deep relation filters that expand into many SQL JOINs (cartesian row explosion)
+- load large `@UnPagedRelation` collections under many parents
+- overuse look-ahead joins on wide graphs
+
+**App-side mitigations (recommended now):**
+
+1. Complexity plugin — see `examples/complexity` (`ComplexityPlugin` + `complexity` on fields/relations). FAQ: [Does nestjs-query support specifying complexity](docs/faq.mdx).
+2. GraphQL depth validation in the Apollo/Nest layer.
+3. Keep `@QueryOptions({ filterDepth })` small (default is `1`). Avoid `Number.POSITIVE_INFINITY` on public APIs (`examples/filters-deep` is a demo of deep filters, not a production template).
+4. Prefer `@OffsetConnection` / `@CursorConnection` over `@UnPagedRelation` except for small trusted collections.
+5. Use `enableLookAhead` only on to-one relations.
+
+Maintainer playbook: [docs/ai/relation-depth-and-oom.md](docs/ai/relation-depth-and-oom.md).
+
+Library-level caps (global max `filterDepth`, packaged complexity helper, resolve-path depth guard) remain optional follow-ups.
+
 ## Hardening roadmap
 
 This fork prioritizes:
@@ -104,7 +125,7 @@ This fork prioritizes:
 1. Authorization fail-closed defaults — **available** (`security.authorization`)
 2. Guards against empty `updateMany` / `deleteMany` filters — **available** (`security.massMutations`)
 3. Global max page / batch sizes — **available** (`security.paging` + createMany `maxBatchSize`)
-4. GraphQL query complexity and filter depth limits
+4. GraphQL query complexity and filter depth limits — **guidance documented** (app complexity/depth + `filterDepth`); library guards optional
 5. TypeORM filter allowlisting and safe operators
 
 See the project plan / changelog for status.

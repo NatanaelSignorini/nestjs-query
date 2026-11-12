@@ -29,3 +29,5 @@ Maintainer notes for this fork. Update this file when the decisions below change
 | Look-ahead / DataLoader | GraphQL relations | look-ahead opt-in for `@Relation`; DataLoader for many |
 
 User-facing docs: `docs/graphql/relations.mdx`, `docs/graphql/dataloaders.mdx`, `docs/graphql/resolvers.mdx` (`selectFromResolveInfo`), `docs/graphql/hooks.mdx`, `docs/persistence/typeorm/custom-service.mdx`.
+
+Relation nesting / JOIN OOM risks (cycles, `filterDepth`, UnPaged, look-ahead): [relation-depth-and-oom.md](relation-depth-and-oom.md).

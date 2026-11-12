@@ -20,6 +20,7 @@ Human contributor setup and PR etiquette also live in [CONTRIBUTING.md](CONTRIBU
 | Branch flow and CI                  | [docs/ai/branch-and-ci.md](docs/ai/branch-and-ci.md)                 |
 | Nest 12 / GraphQL 14 pitfalls       | [docs/ai/nestjs-12-pitfalls.md](docs/ai/nestjs-12-pitfalls.md)       |
 | Performance and After hooks         | [docs/ai/performance-and-hooks.md](docs/ai/performance-and-hooks.md) |
+| Relation depth / OOM risks          | [docs/ai/relation-depth-and-oom.md](docs/ai/relation-depth-and-oom.md) |
 | Updating dependencies               | [docs/ai/updating-dependencies.md](docs/ai/updating-dependencies.md) |
 | Line endings (LF)                   | [docs/ai/line-endings.md](docs/ai/line-endings.md)                   |
 | Mongo unit tests and e2e/federation | [docs/ai/testing-mongo-e2e.md](docs/ai/testing-mongo-e2e.md)         |

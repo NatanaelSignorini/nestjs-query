@@ -69,4 +69,6 @@ The `@FilterableField` decorator accepts the same arguments as the `@Field` deco
 
 The `@Relation` `@FilterableRelation`, `@UnPagedRelation`, `@FilterableUnPagedRelation`, `@OffsetConnection`, `@FilterableOffsetConnection`, `@CursorConnection`, and `@FilterableCursorConnection` decorators also accept a complexity option.
 
+Complexity metadata alone does not reject queries. Install a plugin (see `examples/complexity`) so high-cost or deeply nested relation trees fail before they exhaust Node memory. Pair that with a GraphQL depth limit and prefer paged connections over `@UnPagedRelation` for large collections.
+
 To read more about complexity [see the nestjs docs](https://docs.nestjs.com/graphql/complexity)
