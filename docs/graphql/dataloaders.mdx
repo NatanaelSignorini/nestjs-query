@@ -1,7 +1,9 @@
 ---
 title: 'Dataloaders'
-description: 'Nestjs-query integrates a standard implementation of . Dataloaders are there to solve the . Sometimes the default implementation can fail, for example when asynchronous  are used and the  problem occurs again despite using dataloaders. Then it may be useful to configure the default implementation of the dataloader, for example to pass a custom batch scheduler.'
+description: 'Nestjs-query batches relation and federation reference loads with DataLoader to avoid N+1 queries. Configure the shared DataLoader options when you need a custom batch scheduler or cache behavior.'
 ---
+
+Generated relation resolvers and federation reference resolvers share a per-request DataLoader cache. That is the default way to load **many** relations efficiently. For TypeORM **one** relations that are almost always selected, consider [`enableLookAhead`](/docs/graphql/relations#graphql-lookahead) instead of an extra loader hop.
 
 The following example demonstrates how to configure the generated dataloaders. For more information about the dataloader configuration, see the [dataloader documentation](https://www.npmjs.com/package/dataloader/v/2.2.2).
 
