@@ -28,6 +28,13 @@
         "jestConfig": "packages/query-typeorm/jest.config.ts"
       }
     },
+    "bench": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "packages/query-typeorm/jest.bench.config.ts",
+        "codeCoverage": false
+      }
+    },
     "version": {
       "executor": "@jscutlery/semver:version",
       "options": {}
