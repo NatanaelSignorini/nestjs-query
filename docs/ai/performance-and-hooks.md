@@ -28,4 +28,10 @@ Maintainer notes for this fork. Update this file when the decisions below change
 | `assertMaxAffectedFromCount` | mass mutations | skips count when `maxAffected` is unset |
 | Look-ahead / DataLoader | GraphQL relations | look-ahead opt-in for `@Relation`; DataLoader for many |
 
+### Notes
+
+- **`createMany` existence check** (TypeORM): one batched `count` (`In(ids)` or OR of composite id maps) plus rejection of duplicate primary keys **inside the same batch**. Still best-effort under concurrency — database unique / primary-key constraints remain the authoritative guard (PostgreSQL and others).
+- **`updateStrategy: 'execute'`**: SQL `UPDATE` + reload. Skips TypeORM `save` listeners; does not mirror relation cascades or typical `@VersionColumn` behaviour of `save`. Keep default `save` unless the update is a simple column hot path.
+- **`selectFromResolveInfo`**: opt-in on GraphQL **read** only; partial entities may have unrequested properties as `undefined`.
+
 User-facing docs: `docs/graphql/relations.mdx`, `docs/graphql/dataloaders.mdx`, `docs/graphql/resolvers.mdx` (`selectFromResolveInfo`), `docs/graphql/hooks.mdx`, `docs/persistence/typeorm/custom-service.mdx`.
