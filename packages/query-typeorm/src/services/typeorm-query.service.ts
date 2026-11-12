@@ -88,7 +88,7 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    * @param query - The Query used to filter, page, and sort rows.
    */
   public async query(query: Query<Entity>, opts?: QueryOptions<Entity>): Promise<Entity[]> {
-    const qb = this.filterQueryBuilder.select(query)
+    const qb = this.filterQueryBuilder.select(query, this.getSelectColumns(query, opts))
 
     if (opts?.withDeleted) {
       qb.withDeleted()
@@ -156,7 +156,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    * @param opts
    */
   public async findById(id: string | number, opts?: FindByIdOptions<Entity>): Promise<Entity | undefined> {
-    const qb = this.filterQueryBuilder.selectById(id, opts ?? {})
+    const query = opts ?? {}
+    const qb = this.filterQueryBuilder.selectById(id, query, this.getSelectColumns(query, opts))
 
     if (opts?.withDeleted) {
       qb.withDeleted()
@@ -388,6 +389,43 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
     this.ensureSoftDeleteEnabled()
     const result = await this.filterQueryBuilder.softDelete({ filter }).restore().execute()
     return { updatedCount: result.affected || 0 }
+  }
+
+  /**
+   * Builds a root-entity column list from GraphQL resolveInfo when opt-in is enabled.
+   * Always includes primary keys; adds soft-delete and sort columns when relevant.
+   */
+  private getSelectColumns(query: Query<Entity>, opts?: QueryOptions<Entity> | FindByIdOptions<Entity>): string[] | undefined {
+    if (!opts?.selectFromResolveInfo || !opts.resolveInfo?.fields) {
+      return undefined
+    }
+
+    const selected = new Set<string>()
+    this.repo.metadata.primaryColumns.forEach((column) => {
+      selected.add(column.propertyName)
+    })
+
+    const deleteDateColumn = this.repo.metadata.deleteDateColumn
+    if (deleteDateColumn && (this.useSoftDelete || opts.withDeleted)) {
+      selected.add(deleteDateColumn.propertyName)
+    }
+
+    for (const field of Object.values(opts.resolveInfo.fields)) {
+      if (!field || typeof field !== 'object' || !('name' in field)) {
+        continue
+      }
+      const fieldName = String((field as { name: unknown }).name)
+      if (!fieldName || !this.repo.metadata.findColumnWithPropertyName(fieldName)) {
+        continue
+      }
+      selected.add(fieldName)
+    }
+
+    query.sorting?.forEach((sort) => {
+      selected.add(String(sort.field))
+    })
+
+    return [...selected]
   }
 
   private async ensureIsEntityAndDoesNotExist(entity: DeepPartial<Entity>): Promise<Entity> {

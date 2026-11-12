@@ -73,6 +73,29 @@ describe('TypeOrmQueryService', (): void => {
       return expect(queryResult).toEqual([TEST_ENTITIES[0]])
     })
 
+    it('should project columns from resolveInfo when selectFromResolveInfo is enabled', async () => {
+      const queryService = moduleRef.get(TestEntityService)
+      const queryResult = await queryService.query(
+        { filter: { stringType: { eq: 'foo1' } } },
+        {
+          selectFromResolveInfo: true,
+          resolveInfo: {
+            name: 'testEntities',
+            alias: 'testEntities',
+            fields: {
+              stringType: { name: 'stringType', alias: 'stringType', fields: {} as never }
+            } as never
+          }
+        }
+      )
+
+      expect(queryResult).toHaveLength(1)
+      expect(queryResult[0].testEntityPk).toBe(TEST_ENTITIES[0].testEntityPk)
+      expect(queryResult[0].stringType).toBe(TEST_ENTITIES[0].stringType)
+      expect(queryResult[0].boolType).toBeUndefined()
+      expect(queryResult[0].numberType).toBeUndefined()
+    })
+
     it('should return soft-deleted entities', async () => {
       const queryService = moduleRef.get(TestSoftDeleteEntityService)
       const primaryKeys = TEST_SOFT_DELETE_ENTITIES.map((e) => e.testEntityPk)
