@@ -1957,6 +1957,21 @@ describe('TypeOrmQueryService', (): void => {
       return expect(queryService.createMany(TEST_ENTITIES)).rejects.toThrow('Entity already exists')
     })
 
+    it('should batch existence checks instead of calling findOne per entity', async () => {
+      await truncate(moduleRef.get(getDataSourceToken()))
+      const queryService = moduleRef.get(TestEntityService)
+      const findOneSpy = jest.spyOn(queryService.repo, 'findOne')
+      const countSpy = jest.spyOn(queryService.repo, 'count')
+
+      const created = await queryService.createMany(TEST_ENTITIES)
+
+      expect(created).toEqual(TEST_ENTITIES)
+      expect(findOneSpy).not.toHaveBeenCalled()
+      expect(countSpy).toHaveBeenCalledTimes(1)
+      findOneSpy.mockRestore()
+      countSpy.mockRestore()
+    })
+
     it('should only create entities that match the provided filter', async () => {
       await truncate(moduleRef.get(getDataSourceToken()))
       const queryService = moduleRef.get(TestEntityService)
