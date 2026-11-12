@@ -5,6 +5,7 @@ import omit from 'lodash.omit'
 import { OperationGroup } from '../auth'
 import { getDTONames } from '../common'
 import { AuthorizerFilter, GraphQLResolveInfoResult, GraphQLResultInfo, HookArgs, ResolverQuery } from '../decorators'
+import { removePagingFromSimplifiedInfo } from '../decorators/graphql-resolve-info.utils'
 import { HookTypes } from '../hooks'
 import { AuthorizerInterceptor, HookInterceptor } from '../interceptors'
 import {
@@ -26,6 +27,11 @@ export type ReadResolverFromOpts<
 
 export type ReadResolverOpts<DTO> = {
   QueryArgs?: StaticQueryType<DTO, PagingStrategies>
+  /**
+   * When `true`, passes `selectFromResolveInfo` into the QueryService so adapters
+   * (e.g. TypeORM) can project only GraphQL-requested columns. Default `false`.
+   */
+  selectFromResolveInfo?: boolean
 } & ResolverOpts &
   QueryArgsTypeOpts<DTO> &
   Pick<ConnectionOptions, 'enableTotalCount'>
@@ -64,8 +70,18 @@ export const Readable =
     // TODO:: Remove "connectionName" here in next major version
     const { QueryArgs = QueryArgsType(DTOClass, { connectionName: `${baseName}Connection`, ...opts }) } = opts
     const { ConnectionType } = QueryArgs
+    const selectFromResolveInfo = opts.selectFromResolveInfo === true
 
-    const commonResolverOpts = omit(opts, 'dtoName', 'one', 'many', 'QueryArgs', 'Connection', 'withDeleted')
+    const commonResolverOpts = omit(
+      opts,
+      'dtoName',
+      'one',
+      'many',
+      'QueryArgs',
+      'Connection',
+      'withDeleted',
+      'selectFromResolveInfo'
+    )
 
     @ArgsType()
     class QA extends QueryArgs {}
@@ -100,7 +116,8 @@ export const Readable =
           filter: authorizeFilter,
           withDeleted: opts?.one?.withDeleted,
           relations: resolveInfo?.relations,
-          resolveInfo: resolveInfo?.info
+          resolveInfo: resolveInfo?.info,
+          selectFromResolveInfo
         })
       }
 
@@ -121,11 +138,15 @@ export const Readable =
         @GraphQLResultInfo(DTOClass)
         resolveInfo?: GraphQLResolveInfoResult<DTO, DTO>
       ): Promise<InstanceType<typeof ConnectionType>> {
+        const nodeResolveInfo =
+          selectFromResolveInfo && resolveInfo?.info ? removePagingFromSimplifiedInfo(resolveInfo.info) : resolveInfo?.info
+
         return ConnectionType.createFromPromise(
           (q) =>
             this.service.query(q, {
               withDeleted: opts?.many?.withDeleted,
-              resolveInfo: resolveInfo?.info
+              resolveInfo: nodeResolveInfo,
+              selectFromResolveInfo
             }),
           mergeQuery(query, { filter: authorizeFilter, relations: resolveInfo?.relations }),
           (filter) =>

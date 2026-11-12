@@ -17,13 +17,15 @@ import {
   filterCreatableRecords,
   FindByIdOptions,
   GetByIdOptions,
+  mergeFilter,
   Query,
   QueryOptions,
   QueryService,
   UpdateManyResponse,
-  UpdateOneOptions
+  UpdateOneOptions,
+  UpdateOneStrategy
 } from '@ptc-org/nestjs-query-core'
-import { DeleteResult, FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm'
+import { DeleteResult, FindOptionsWhere, In, ObjectLiteral, Repository } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 import { UpdateResult } from 'typeorm/query-builder/result/UpdateResult'
 
@@ -33,6 +35,11 @@ import { RelationQueryService } from './relation-query.service'
 export interface TypeOrmQueryServiceOpts<Entity extends ObjectLiteral> {
   useSoftDelete?: boolean
   filterQueryBuilder?: FilterQueryBuilder<Entity>
+  /**
+   * Default strategy for {@link TypeOrmQueryService.updateOne}. Per-call `opts.updateStrategy` wins.
+   * Default: `save`.
+   */
+  updateStrategy?: UpdateOneStrategy
 }
 
 /**
@@ -59,6 +66,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
 
   readonly useSoftDelete: boolean
 
+  readonly updateStrategy: UpdateOneStrategy
+
   constructor(
     readonly repo: Repository<Entity>,
     opts?: TypeOrmQueryServiceOpts<Entity>
@@ -67,6 +76,7 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
 
     this.filterQueryBuilder = opts?.filterQueryBuilder ?? new FilterQueryBuilder<Entity>(this.repo)
     this.useSoftDelete = opts?.useSoftDelete ?? false
+    this.updateStrategy = opts?.updateStrategy ?? 'save'
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -88,7 +98,7 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    * @param query - The Query used to filter, page, and sort rows.
    */
   public async query(query: Query<Entity>, opts?: QueryOptions<Entity>): Promise<Entity[]> {
-    const qb = this.filterQueryBuilder.select(query)
+    const qb = this.filterQueryBuilder.select(query, this.getSelectColumns(query, opts))
 
     if (opts?.withDeleted) {
       qb.withDeleted()
@@ -156,7 +166,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    * @param opts
    */
   public async findById(id: string | number, opts?: FindByIdOptions<Entity>): Promise<Entity | undefined> {
-    const qb = this.filterQueryBuilder.selectById(id, opts ?? {})
+    const query = opts ?? {}
+    const qb = this.filterQueryBuilder.selectById(id, query, this.getSelectColumns(query, opts))
 
     if (opts?.withDeleted) {
       qb.withDeleted()
@@ -222,9 +233,8 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    */
   public async createMany(records: DeepPartial<Entity>[], opts?: CreateManyOptions<Entity>): Promise<Entity[]> {
     const creatableRecords = filterCreatableRecords(records as Entity[], opts?.filter)
-    const entities = await Promise.all(
-      creatableRecords.map((creatableRecord) => this.ensureIsEntityAndDoesNotExist(creatableRecord as DeepPartial<Entity>))
-    )
+    const entities = creatableRecords.map((creatableRecord) => this.toEntity(creatableRecord as DeepPartial<Entity>))
+    await this.ensureEntitiesDoNotExist(entities)
     return this.repo.save(entities)
   }
 
@@ -241,10 +251,45 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
    */
   async updateOne(id: number | string, update: DeepPartial<Entity>, opts?: UpdateOneOptions<Entity>): Promise<Entity> {
     this.ensureIdIsNotPresent(update)
+    const strategy = opts?.updateStrategy ?? this.updateStrategy
+    if (strategy === 'execute') {
+      return this.updateOneExecute(id, update, opts)
+    }
     const entity = await this.getById(id, opts)
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return this.repo.save(this.repo.merge(entity, update))
+  }
+
+  /**
+   * UPDATE via QueryBuilder then reload. Does not run TypeORM `save` listeners.
+   */
+  private async updateOneExecute(
+    id: number | string,
+    update: DeepPartial<Entity>,
+    opts?: UpdateOneOptions<Entity>
+  ): Promise<Entity> {
+    if (this.repo.metadata.primaryColumns.length !== 1) {
+      // Composite PKs: fall back to save path for correct id targeting.
+      const entity = await this.getById(id, opts)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return this.repo.save(this.repo.merge(entity, update))
+    }
+
+    const idProperty = this.repo.metadata.primaryColumns[0].propertyName
+    const idFilter = { [idProperty]: { eq: id } } as Filter<Entity>
+    const filter = mergeFilter(idFilter, opts?.filter ?? {})
+    const updateResult = await this.filterQueryBuilder
+      .update({ filter })
+      .set({ ...(update as QueryDeepPartialEntity<Entity>) })
+      .execute()
+
+    if (!updateResult.affected) {
+      throw new NotFoundException(`Unable to find ${this.EntityClass.name} with id: ${id}`)
+    }
+
+    return this.getById(id, opts)
   }
 
   /**
@@ -391,25 +436,86 @@ export class TypeOrmQueryService<Entity extends ObjectLiteral>
     return { updatedCount: result.affected || 0 }
   }
 
-  private async ensureIsEntityAndDoesNotExist(entity: DeepPartial<Entity>): Promise<Entity> {
-    if (!(entity instanceof this.EntityClass)) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return this.ensureEntityDoesNotExist(this.repo.create(entity))
+  /**
+   * Builds a root-entity column list from GraphQL resolveInfo when opt-in is enabled.
+   * Always includes primary keys; adds soft-delete and sort columns when relevant.
+   */
+  private getSelectColumns(query: Query<Entity>, opts?: QueryOptions<Entity> | FindByIdOptions<Entity>): string[] | undefined {
+    if (!opts?.selectFromResolveInfo || !opts.resolveInfo?.fields) {
+      return undefined
     }
-    return this.ensureEntityDoesNotExist(entity)
+
+    const selected = new Set<string>()
+    this.repo.metadata.primaryColumns.forEach((column) => {
+      selected.add(column.propertyName)
+    })
+
+    const deleteDateColumn = this.repo.metadata.deleteDateColumn
+    if (deleteDateColumn && (this.useSoftDelete || opts.withDeleted)) {
+      selected.add(deleteDateColumn.propertyName)
+    }
+
+    for (const field of Object.values(opts.resolveInfo.fields)) {
+      if (!field || typeof field !== 'object' || !('name' in field)) {
+        continue
+      }
+      const fieldName = String((field as { name: unknown }).name)
+      if (!fieldName || !this.repo.metadata.findColumnWithPropertyName(fieldName)) {
+        continue
+      }
+      selected.add(fieldName)
+    }
+
+    query.sorting?.forEach((sort) => {
+      selected.add(String(sort.field))
+    })
+
+    return [...selected]
   }
 
-  private async ensureEntityDoesNotExist(e: Entity): Promise<Entity> {
-    if (this.repo.hasId(e)) {
-      const where = this.repo.metadata.getEntityIdMap(e) as FindOptionsWhere<Entity>
-      const found = await this.repo.findOne({ where })
+  private async ensureIsEntityAndDoesNotExist(entity: DeepPartial<Entity>): Promise<Entity> {
+    const instance = this.toEntity(entity)
+    await this.ensureEntitiesDoNotExist([instance])
+    return instance
+  }
 
-      if (found) {
+  private toEntity(entity: DeepPartial<Entity>): Entity {
+    if (entity instanceof this.EntityClass) {
+      return entity
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this.repo.create(entity)
+  }
+
+  /**
+   * Rejects when any entity that already has an id is present in the database.
+   * Uses a single batched lookup for createMany instead of one findOne per record.
+   */
+  private async ensureEntitiesDoNotExist(entities: Entity[]): Promise<void> {
+    const entitiesWithIds = entities.filter((entity) => this.repo.hasId(entity))
+    if (entitiesWithIds.length === 0) {
+      return
+    }
+
+    const primaryColumns = this.repo.metadata.primaryColumns
+    if (primaryColumns.length === 1) {
+      const idProperty = primaryColumns[0].propertyName
+      const ids = entitiesWithIds.map((entity) => (entity as Record<string, unknown>)[idProperty])
+      const existingCount = await this.repo.count({
+        where: { [idProperty]: In(ids) } as FindOptionsWhere<Entity>
+      })
+      if (existingCount > 0) {
         throw new Error('Entity already exists')
       }
+      return
     }
-    return e
+
+    const where = entitiesWithIds.map((entity) => this.repo.metadata.getEntityIdMap(entity) as FindOptionsWhere<Entity>)
+    const existingCount = await this.repo.count({ where })
+    if (existingCount > 0) {
+      throw new Error('Entity already exists')
+    }
   }
 
   private ensureIdIsNotPresent(e: DeepPartial<Entity>): void {

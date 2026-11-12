@@ -100,9 +100,15 @@ export class FilterQueryBuilder<Entity extends ObjectLiteral> {
    * Create a `typeorm` SelectQueryBuilder with `WHERE`, `ORDER BY` and `LIMIT/OFFSET` clauses.
    *
    * @param query - the query to apply.
+   * @param selectColumns - optional root-entity column property names to project.
+   *   Applied before relation joins so `leftJoinAndSelect` can still add relation columns.
    */
-  public select(query: Query<Entity>): SelectQueryBuilder<Entity> {
+  public select(query: Query<Entity>, selectColumns?: string[]): SelectQueryBuilder<Entity> {
     let qb = this.createQueryBuilder()
+
+    if (selectColumns?.length) {
+      qb = qb.select(selectColumns.map((column) => `${qb.alias}.${column}`))
+    }
 
     qb = this.applyRelationJoinsRecursive(
       qb,
@@ -117,8 +123,12 @@ export class FilterQueryBuilder<Entity extends ObjectLiteral> {
     return qb
   }
 
-  public selectById(id: string | number | (string | number)[], query: Query<Entity>): SelectQueryBuilder<Entity> {
-    return this.select(query).andWhereInIds(id)
+  public selectById(
+    id: string | number | (string | number)[],
+    query: Query<Entity>,
+    selectColumns?: string[]
+  ): SelectQueryBuilder<Entity> {
+    return this.select(query, selectColumns).andWhereInIds(id)
   }
 
   public aggregate(query: Query<Entity>, aggregate: AggregateQuery<Entity>): SelectQueryBuilder<Entity> {

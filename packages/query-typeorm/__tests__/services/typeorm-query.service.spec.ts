@@ -73,6 +73,29 @@ describe('TypeOrmQueryService', (): void => {
       return expect(queryResult).toEqual([TEST_ENTITIES[0]])
     })
 
+    it('should project columns from resolveInfo when selectFromResolveInfo is enabled', async () => {
+      const queryService = moduleRef.get(TestEntityService)
+      const queryResult = await queryService.query(
+        { filter: { stringType: { eq: 'foo1' } } },
+        {
+          selectFromResolveInfo: true,
+          resolveInfo: {
+            name: 'testEntities',
+            alias: 'testEntities',
+            fields: {
+              stringType: { name: 'stringType', alias: 'stringType', fields: {} as never }
+            } as never
+          }
+        }
+      )
+
+      expect(queryResult).toHaveLength(1)
+      expect(queryResult[0].testEntityPk).toBe(TEST_ENTITIES[0].testEntityPk)
+      expect(queryResult[0].stringType).toBe(TEST_ENTITIES[0].stringType)
+      expect(queryResult[0].boolType).toBeUndefined()
+      expect(queryResult[0].numberType).toBeUndefined()
+    })
+
     it('should return soft-deleted entities', async () => {
       const queryService = moduleRef.get(TestSoftDeleteEntityService)
       const primaryKeys = TEST_SOFT_DELETE_ENTITIES.map((e) => e.testEntityPk)
@@ -1957,6 +1980,21 @@ describe('TypeOrmQueryService', (): void => {
       return expect(queryService.createMany(TEST_ENTITIES)).rejects.toThrow('Entity already exists')
     })
 
+    it('should batch existence checks instead of calling findOne per entity', async () => {
+      await truncate(moduleRef.get(getDataSourceToken()))
+      const queryService = moduleRef.get(TestEntityService)
+      const findOneSpy = jest.spyOn(queryService.repo, 'findOne')
+      const countSpy = jest.spyOn(queryService.repo, 'count')
+
+      const created = await queryService.createMany(TEST_ENTITIES)
+
+      expect(created).toEqual(TEST_ENTITIES)
+      expect(findOneSpy).not.toHaveBeenCalled()
+      expect(countSpy).toHaveBeenCalledTimes(1)
+      findOneSpy.mockRestore()
+      countSpy.mockRestore()
+    })
+
     it('should only create entities that match the provided filter', async () => {
       await truncate(moduleRef.get(getDataSourceToken()))
       const queryService = moduleRef.get(TestEntityService)
@@ -2082,6 +2120,19 @@ describe('TypeOrmQueryService', (): void => {
       const queryService = moduleRef.get(TestEntityService)
       const updated = await queryService.updateOne(TEST_ENTITIES[0].testEntityPk, { stringType: 'updated' })
       expect(updated).toEqual({ ...TEST_ENTITIES[0], stringType: 'updated' })
+    })
+
+    it('should update with execute strategy without using save', async () => {
+      const queryService = moduleRef.get(TestEntityService)
+      const saveSpy = jest.spyOn(queryService.repo, 'save')
+      const updated = await queryService.updateOne(
+        TEST_ENTITIES[1].testEntityPk,
+        { stringType: 'updated-execute' },
+        { updateStrategy: 'execute' }
+      )
+      expect(updated).toEqual({ ...TEST_ENTITIES[1], stringType: 'updated-execute' })
+      expect(saveSpy).not.toHaveBeenCalled()
+      saveSpy.mockRestore()
     })
 
     it('should reject if the update contains a primary key', async () => {

@@ -97,7 +97,7 @@ describe('ReadResolver', () => {
         when(
           mockService.query(
             objectContaining({ ...input, paging: { limit: 2, offset: 0 } }),
-            deepEqual({ withDeleted: undefined, resolveInfo: undefined })
+            deepEqual({ withDeleted: undefined, resolveInfo: undefined, selectFromResolveInfo: false })
           )
         ).thenResolve(output)
         const result = await resolver.queryMany(input)
@@ -142,7 +142,7 @@ describe('ReadResolver', () => {
         when(
           mockService.query(
             objectContaining({ filter: { and: [input.filter, authorizeFilter] }, paging: { limit: 2, offset: 0 } }),
-            deepEqual({ withDeleted: undefined, resolveInfo: undefined })
+            deepEqual({ withDeleted: undefined, resolveInfo: undefined, selectFromResolveInfo: false })
           )
         ).thenResolve(output)
 
@@ -187,7 +187,7 @@ describe('ReadResolver', () => {
               ...input,
               paging: { limit: 2, offset: 0 }
             }),
-            deepEqual({ withDeleted: undefined, resolveInfo: undefined })
+            deepEqual({ withDeleted: undefined, resolveInfo: undefined, selectFromResolveInfo: false })
           )
         ).thenResolve(output)
         const result = await resolver.queryMany(input)
@@ -214,7 +214,10 @@ describe('ReadResolver', () => {
         const query = { filter: { and: [input.filter, authorizeFilter] }, paging: { limit: 2, offset: 0 } }
 
         when(
-          mockService.query(objectContaining(query), deepEqual({ withDeleted: undefined, resolveInfo: undefined }))
+          mockService.query(
+            objectContaining(query),
+            deepEqual({ withDeleted: undefined, resolveInfo: undefined, selectFromResolveInfo: false })
+          )
         ).thenResolve(output)
 
         const result = await resolver.queryMany(input, authorizeFilter)
@@ -255,7 +258,8 @@ describe('ReadResolver', () => {
             objectContaining({ ...input, paging: { limit: 2 } }),
             deepEqual({
               withDeleted: undefined,
-              resolveInfo: undefined
+              resolveInfo: undefined,
+              selectFromResolveInfo: false
             })
           )
         ).thenResolve(output)
@@ -290,7 +294,10 @@ describe('ReadResolver', () => {
           }
         ]
         when(
-          mockService.query(objectContaining(input), deepEqual({ withDeleted: undefined, resolveInfo: undefined }))
+          mockService.query(
+            objectContaining(input),
+            deepEqual({ withDeleted: undefined, resolveInfo: undefined, selectFromResolveInfo: false })
+          )
         ).thenResolve(output)
         const result = await resolver.queryMany(input)
         return expect(result).toEqual(output)
