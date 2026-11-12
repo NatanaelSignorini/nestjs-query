@@ -73,6 +73,8 @@ $env:NODE_OPTIONS='--experimental-vm-modules'; yarn nx test <project>
 
 Common projects: `core`, `query-graphql`, `query-rest`, `query-typeorm`, `query-mongoose`, `query-sequelize`, `query-mikro-orm`, `query-typegoose`. List with `yarn nx show projects`.
 
+Manual TypeORM microbench (not CI): `NODE_OPTIONS=--experimental-vm-modules yarn nx bench query-typeorm` — see [docs/ai/performance-and-hooks.md](docs/ai/performance-and-hooks.md).
+
 All packages (mirrors light CI):
 
 ```sh
