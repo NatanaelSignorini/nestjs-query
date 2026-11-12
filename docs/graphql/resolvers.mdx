@@ -235,6 +235,7 @@ When using `NestjsQueryGraphQLModule` or `CRUDResolver` you can define a number 
 - `read` - In addition to [`ResolverOptions`](#resolveroptions) you can also specify the following
 
   - `QueryArgs` - Specify to override the auto-generated `ArgsType` to use to filter records in `queryMany` endpoint.
+  - `selectFromResolveInfo` - When `true` (default `false`), persistence adapters that support it (TypeORM) restrict selected columns to fields present in the GraphQL selection set, plus primary keys, sort fields, and soft-delete columns. Unrequested properties on the entity may be `undefined`. Enable only when clients select a subset of columns and you accept partial entities.
 
 - `update` - In addition to [`ResolverOptions`](#resolveroptions) you can also specify the following
 

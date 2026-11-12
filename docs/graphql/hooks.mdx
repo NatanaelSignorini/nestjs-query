@@ -12,6 +12,8 @@ description: 'provides the following hooks that allow you to modify incoming req
 - `@BeforeDeleteOne` - invoked before any `deleteOne` mutation.
 - `@BeforeDeleteMany` - invoked before any `deleteMany` mutation.
 
+There are **no** built-in `@After*` hooks. To transform or enrich results after the query service runs, override methods on a custom `QueryService`, add `@ResolveField` for derived fields, or use a Nest interceptor on the resolver. See the maintainer note in `docs/ai/performance-and-hooks.md`.
+
 In order to use a hook you only need to decorate your DTO with the corresponding decorator.
 
 Each hook decorator can be provided one of the following:
