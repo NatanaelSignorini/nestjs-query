@@ -1049,7 +1049,9 @@ Sometimes you may want to expose a relation that has a different name when persi
 
 <Warning>This functionality only works for typeorm!</Warning>
 
-When you want to optimze your database queries you can set `enableLookAhead`, this will join and select the relation when it's being fetched in the query.
+When you want to optimize your database queries you can set `enableLookAhead`. For **one** relations (`@Relation`), this joins and selects the related row in the root query when the field is present in the GraphQL selection set, avoiding an extra DataLoader round-trip.
+
+Use look-ahead for stable one-to-one / many-to-one fields that clients almost always request. Prefer the default [DataLoader](/docs/graphql/dataloaders) batching for **many** relations (`@CursorConnection`, `@OffsetConnection`, `@UnPagedRelation`) — joining large collections in the root query can inflate result sets (cartesian growth) and hurt paging.
 
 <Tabs>
   <Tab title="Relation">
@@ -1061,6 +1063,14 @@ When you want to optimze your database queries you can set `enableLookAhead`, th
 
   </Tab>
 </Tabs>
+
+### Filtering relations and paging[​](#filtering-relations-and-paging 'Direct link to Filtering relations and paging')
+
+Filtering the root list by a **to-many** relation (for example `subTasks: { completed: { is: true } }`) forces joins that can duplicate parent rows. TypeORM paging then may need `skip`/`take` instead of `limit`/`offset`, which is more expensive on large tables. Prefer:
+
+- Filtering on indexed scalar columns of the root entity when possible
+- Key-set (`@KeySet`) cursors for stable large-list performance — see [Paging](/docs/graphql/queries/paging)
+- Relation fields resolved via DataLoader after the page of parents is loaded
 
 ### Disable Reads[​](#disable-reads 'Direct link to Disable Reads')
 
