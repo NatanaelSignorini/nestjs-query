@@ -12,6 +12,21 @@
 - `delete_branch_on_merge` is enabled.
 - `CODEOWNERS`: `* @NatanaelSignorini`.
 
+### Allowed PR directions
+
+| From → To | Allowed? | How |
+| --------- | -------- | --- |
+| feature/chore → **`dev`** | Yes | Normal PRs |
+| **`dev` → `main`** | Yes | Only via Actions → **Promote dev to main** |
+| feature → **`main`** | No (rare exception) | Only when changing promote/CI wiring itself |
+| **`main` → `dev`** | **No** (do not open by hand) | See below |
+
+**Do not open GitHub PRs `main` → `dev`.** After a promote, the UI may offer “sync” / compare `main` into `dev`. That creates empty or noise PRs (example: PR #29 titled “Main”, 0 files) whose merge commit message looks like `Merge pull request #N from …/main`. Code scanning / `CI (dev)` then correctly run on **`dev`**, but the run title still shows `/main` because that string is the merge commit subject — not because the gate targeted `main`.
+
+If `dev` falls behind `main` (unusual with this flow), sync with a **local merge or rebase of `main` into a short-lived branch**, open that branch → `dev`, and explain why in the PR body. Prefer fixing the promote path over habitual `main` → `dev` PRs.
+
+When reading Actions notifications: trust the run’s **branch** field (`dev` vs `main`) and the workflow name (`CI (dev)` / `CI (main)` / `Code scanning`), not only the commit title.
+
 ## Workflows
 
 Active definitions live under `.github/workflows/`. **Light and full gates are separate workflow files** so a push to `dev` never posts a skipped check named `check (main)` on the same SHA (that footgun let promote PR #14 auto-merge without a real full gate).

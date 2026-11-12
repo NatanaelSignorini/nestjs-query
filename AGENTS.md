@@ -36,6 +36,7 @@ These files are **not** registered in Mintlify `docs/docs.json`. They are for ag
 - Promote is **not** automatic on push/PR to `dev` (avoids spam PRs and skipped Promote runs from `workflow_run`).
 - **`CI (main)` and `CI (dev)` are separate workflow files** so push-to-`dev` never posts a skipped check named `check (main)` on the same SHA.
 - Do not open feature PRs directly to `main` unless you are changing promote/CI wiring itself.
+- **Do not open PRs `main` → `dev`** (including GitHub “sync” after promote). That produces noise merges whose Actions titles say `/main` while the push is still to `dev`. Details: [docs/ai/branch-and-ci.md](docs/ai/branch-and-ci.md).
 
 Details: [docs/ai/branch-and-ci.md](docs/ai/branch-and-ci.md).
 
